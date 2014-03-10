@@ -150,3 +150,65 @@ define command{
 ```
 OK: Status OK.|'Containers'=1;0;1000 'Images'=11;0;0 'NEventsListener'=3;0;0 'NFd'=10;0;0 'NGoroutines'=14;0;0 'SwapLimit'=1;0;0 
 ```
+
+### Docker Container Monitor Example Plugin
+
+`check_http_json.py` is generic enough to read and evaluate rules on any HTTP endpoint that returns JSON. In this example we'll get the status of a specific container using it's ID which camn be found by using the list containers endpoint (`curl http://127.0.0.1:4243/containers/json?all=1`).
+
+##### Connection information
+
+* Host = 127.0.0.1:4243
+* Path = /containers/2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615/json
+
+##### Rules for "aliveness"
+
+* Verify that the key `ID` exists and is equal to the value `2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615`
+* Verify that the key `State.Running` has a value of `True`
+
+#### Service Definition
+
+`localhost.cfg`
+
+```
+
+define service {
+        use                             local-service
+        host_name                       localhost
+        service_description             Docker container liveness check
+        check_command                   check_my_container
+        }
+
+```
+
+#### Command Definition with Arguments
+
+`commands.cfg`
+
+```
+
+define command{
+        command_name    check_my_container
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H 127.0.0.1:4243 -p /containers/2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615/json -q ID,2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615 State.Running,True
+        }
+
+```
+
+#### Sample Output
+
+```
+WARNING: Status check failed, reason: Value True for key State.Running did not match.
+```
+
+The plugin threw a warning because the Container ID I used on my system has the following State object:
+
+```
+ u'State': {...
+            u'Running': False,
+            ...
+```
+
+If I change the command to have the parameter -q parameter `State.Running,False`, the output becomes:
+
+```
+OK: Status OK.
+```

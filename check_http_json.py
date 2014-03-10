@@ -43,15 +43,24 @@ class JsonHelper:
 	def __init__(self, json_data):
 		self.data = json_data
 
-	def equals(self, key, value): return (key in self.data) and (str(self.data[key]) == value)
-	def lte(self, key, value): return (key in self.data) and (str(self.data[key]) <= value)
-	def gte(self, key, value): return (key in self.data) and (str(self.data[key]) >= value)
-	def exists(self, key): return key in self.data
-	def get(self, key):
-		if key in self.data:
-			return self.data[key]
+	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
+	def lte(self, key, value): return self.exists(key) and str(self.get(key)) <= value
+	def gte(self, key, value): return self.exists(key) and str(self.get(key)) >= value
+	def exists(self, key): return (self.get(key) != (None, 'not_found'))
+	def get(self, key, temp_data=''):
+		"""Can navigate nested json keys with a dot format (Element.Key.NestedKey). Returns (None, 'not_found') if not found"""
+		if temp_data:
+			data = temp_data
 		else:
-			return ''
+			data = self.data
+
+		if '.' in key:
+			return self.get(key[key.find('.') + 1:], data[key[:key.find('.')]])
+		else:
+			if key in data:
+				return  data[key]
+			else:
+				return (None, 'not_found')
 
 class JsonRuleProcessor:
 	"""Perform checks and gather values from a JSON dict given rules and metrics definitions"""
@@ -73,7 +82,7 @@ class JsonRuleProcessor:
 			for kv in self.rules.key_value_list:
 				k, v = kv.split(',')
 				if (helper.equals(k, v) == False):
-					reason += " Value %s for key %sdid not match." % (v, k)
+					reason += " Value %s for key %s did not match." % (v, k)
 
 		if self.rules.key_lte_list != None:
 			for kv in self.rules.key_lte_list:
