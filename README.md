@@ -35,7 +35,7 @@ Add the following command definition to your commands config (`commands.config`)
 
 define command{
         command_name    <command_name>
-        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-l|-g <rules>] [-e <metrics>]
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-l|-g <rules>] [-m <metrics>]
         }
 
 ```
