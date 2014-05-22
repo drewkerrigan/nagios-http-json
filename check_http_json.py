@@ -44,8 +44,8 @@ class JsonHelper:
 		self.data = json_data
 
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
-	def lte(self, key, value): return self.exists(key) and str(self.get(key)) <= value
-	def gte(self, key, value): return self.exists(key) and str(self.get(key)) >= value
+	def lte(self, key, value): return self.exists(key) and float(self.get(key)) <= float(value)
+	def gte(self, key, value): return self.exists(key) and float(self.get(key)) >= float(value)
 	def exists(self, key): return (self.get(key) != (None, 'not_found'))
 	def get(self, key, temp_data=''):
 		"""Can navigate nested json keys with a dot format (Element.Key.NestedKey). Returns (None, 'not_found') if not found"""
