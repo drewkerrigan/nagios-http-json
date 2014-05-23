@@ -11,6 +11,8 @@ import httplib, urllib, urllib2
 import json
 import argparse
 from pprint import pprint
+from urllib2 import HTTPError
+from urllib2 import URLError
 
 
 class NagiosHelper:
