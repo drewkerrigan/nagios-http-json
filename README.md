@@ -52,7 +52,8 @@ usage: check_http_json.py [-h] -H HOST [-p PATH]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
                           [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
-                          [-m [METRIC_LIST [METRIC_LIST ...]]] [-d]
+                          [-m [METRIC_LIST [METRIC_LIST ...]]] [-s] [-d]
+
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -84,6 +85,7 @@ optional arguments:
                         plugins.org/doc/guidelines.html Additional formats for
                         this parameter are: (key), (key,UnitOfMeasure),
                         (key,UnitOfMeasure,Min,Max).
+  -s, --ssl             HTTPS mode.
   -d, --debug           Debug mode.
 ```
 
