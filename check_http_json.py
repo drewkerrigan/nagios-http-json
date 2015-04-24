@@ -7,10 +7,12 @@ Generic Nagios plugin which checks json values from a given endpoint against arg
 and determines the status and performance data for that service.
 """
 
-import httplib, urllib, urllib2
+import httplib, urllib, urllib2, base64
 import json
 import argparse
 from pprint import pprint
+from urllib2 import HTTPError
+from urllib2 import URLError
 
 
 class NagiosHelper:
@@ -45,8 +47,8 @@ class JsonHelper:
 		self.separator = separator
 
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
-	def lte(self, key, value): return self.exists(key) and str(self.get(key)) <= value
-	def gte(self, key, value): return self.exists(key) and str(self.get(key)) >= value
+	def lte(self, key, value): return self.exists(key) and float(self.get(key)) <= float(value)
+	def gte(self, key, value): return self.exists(key) and float(self.get(key)) >= float(value)
 	def exists(self, key): return (self.get(key) != (None, 'not_found'))
 	def get(self, key, temp_data=''):
 		"""Can navigate nested json keys with a dot format (Element.Key.NestedKey). Returns (None, 'not_found') if not found"""
@@ -144,6 +146,7 @@ def parseArgs():
 			and determines the status and performance data for that service')
 
 	parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
+	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', 
 		help='Checks existence of these keys to determine status.')
@@ -159,8 +162,9 @@ def parseArgs():
 		help='Gathers the values of these keys (key,UnitOfMeasure,Min,Max,WarnRange,CriticalRange) for Nagios performance data.\
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
+	parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
+	parser.add_argument('-f', '--field_separator', dest='separator', help='Json Field separator, defaults to "."')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
-	parser.add_argument('-s', '--separator', dest='separator', help='Json Field separator, defaults to "."')
 
 	return parser.parse_args()
 
@@ -176,13 +180,20 @@ if __name__ == "__main__":
 	args = parseArgs()
 	nagios = NagiosHelper()
 
-	url = "http://%s" % args.host
+	if args.ssl:
+		url = "https://%s" % args.host
+	else:
+		url = "http://%s" % args.host
+
 	if args.path: url += "/%s" % args.path
 	debugPrint(args.debug, "url:%s" % url)
 
 	# Attempt to reach the endpoint
 	try:
 		req = urllib2.Request(url)
+		if args.auth:
+			base64str = base64.encodestring(args.auth).replace('\n', '')
+			req.add_header('Authorization', 'Basic %s' % base64str)
 		response = urllib2.urlopen(req)
 	except HTTPError as e:
 		nagios.unknown("HTTPError[%s], url:%s" % (str(e.code), url))

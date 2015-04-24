@@ -47,13 +47,13 @@ More info about options in Usage.
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] -H HOST [-p PATH]
+usage: check_http_json.py [-h] -H HOST [-B AUTH] [-p PATH]
                           [-e [KEY_LIST [KEY_LIST ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
                           [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
-                          [-m [METRIC_LIST [METRIC_LIST ...]]] [-d]
-                          [-s SEPARATOR]
+                          [-m [METRIC_LIST [METRIC_LIST ...]]] [-s]
+                          [-f SEPARATOR] [-d]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -62,6 +62,8 @@ service
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Host.
+  -B AUTH, --basic-auth AUTH
+                        Basic auth string "username:password"
   -p PATH, --path PATH  Path.
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
                         Checks existence of these keys to determine status.
@@ -85,9 +87,10 @@ optional arguments:
                         plugins.org/doc/guidelines.html Additional formats for
                         this parameter are: (key), (key,UnitOfMeasure),
                         (key,UnitOfMeasure,Min,Max).
-  -d, --debug           Debug mode.
-  -s SEPARATOR, --separator SEPARATOR
+  -s, --ssl             HTTPS mode.
+  -f SEPARATOR, --field_separator SEPARATOR
                         Json Field separator, defaults to "."
+  -d, --debug           Debug mode.
 ```
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
