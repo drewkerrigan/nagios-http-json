@@ -40,8 +40,9 @@ class NagiosHelper:
 
 class JsonHelper:
 	"""Perform simple comparison operations against values in a given JSON dict"""
-	def __init__(self, json_data):
+	def __init__(self, json_data, separator):
 		self.data = json_data
+		self.separator = separator
 
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
 	def lte(self, key, value): return self.exists(key) and str(self.get(key)) <= value
@@ -54,8 +55,8 @@ class JsonHelper:
 		else:
 			data = self.data
 
-		if '.' in key:
-			return self.get(key[key.find('.') + 1:], data[key[:key.find('.')]])
+		if self.separator in key:
+			return self.get(key[key.find(self.separator) + 1:], data[key[:key.find(self.separator)]])
 		else:
 			if key in data:
 				return  data[key]
@@ -67,33 +68,37 @@ class JsonRuleProcessor:
 	def __init__(self, json_data, rules_args):
 		self.data = json_data
 		self.rules = rules_args
+		separator = '.'
+		if self.rules.separator: separator = self.rules.separator
+		self.helper = JsonHelper(self.data, separator)
+
+		debugPrint(rules_args.debug, "separator:%s" % separator)
 
 	def isAlive(self):
 		"""Return a tuple with liveness and reason for not liveness given existence, equality, and comparison rules"""
 		reason = ''
-		helper = JsonHelper(self.data)
 
 		if self.rules.key_list != None:
 			for k in self.rules.key_list:
-				if (helper.exists(k) == False):
+				if (self.helper.exists(k) == False):
 					reason += " Key %s did not exist." % k
 
 		if self.rules.key_value_list != None:
 			for kv in self.rules.key_value_list:
 				k, v = kv.split(',')
-				if (helper.equals(k, v) == False):
+				if (self.helper.equals(k, v) == False):
 					reason += " Value %s for key %s did not match." % (v, k)
 
 		if self.rules.key_lte_list != None:
 			for kv in self.rules.key_lte_list:
 				k, v = kv.split(',')
-				if (helper.lte(k, v) == False):
+				if (self.helper.lte(k, v) == False):
 					reason += " Value %s was not less than or equal to value for key %s." % (v, k)
 
 		if self.rules.key_gte_list != None:
 			for kv in self.rules.key_gte_list:
 				k, v = kv.split(',')
-				if (helper.gte(k, v) == False):
+				if (self.helper.gte(k, v) == False):
 					reason += " Value %s was not greater than or equal to value for key %s." % (v, k)
 
 		is_alive = (reason == '')
@@ -103,15 +108,12 @@ class JsonRuleProcessor:
 	def getMetrics(self):
 		"""Return a Nagios specific performance metrics string given keys and parameter definitions"""
 		metrics = ''
-		helper = JsonHelper(self.data)
 
 		if self.rules.metric_list != None:
 			for metric in self.rules.metric_list:
 				key = metric
 				minimum = maximum = warn_range = crit_range = 0
 				uom = ''
-
-				vals = metric.split(',')
 
 				if ',' in metric:
 					vals = metric.split(',')
@@ -123,8 +125,8 @@ class JsonRuleProcessor:
 					if len(vals) == 6:
 						key,uom,minimum,maximum,warn_range,crit_range = vals
 
-				if helper.exists(key):
-					metrics += "'%s'=%s" % (key, helper.get(key))
+				if self.helper.exists(key):
+					metrics += "'%s'=%s" % (key, self.helper.get(key))
 					if uom: metrics += uom
 					metrics += ";%s" % minimum
 					metrics += ";%s" % maximum
@@ -158,6 +160,7 @@ def parseArgs():
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
+	parser.add_argument('-s', '--separator', dest='separator', help='Json Field separator, defaults to "."')
 
 	return parser.parse_args()
 

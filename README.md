@@ -53,6 +53,7 @@ usage: check_http_json.py [-h] -H HOST [-p PATH]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
                           [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]] [-d]
+                          [-s SEPARATOR]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -85,6 +86,8 @@ optional arguments:
                         this parameter are: (key), (key,UnitOfMeasure),
                         (key,UnitOfMeasure,Min,Max).
   -d, --debug           Debug mode.
+  -s SEPARATOR, --separator SEPARATOR
+                        Json Field separator, defaults to "."
 ```
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
@@ -211,6 +214,20 @@ If I change the command to have the parameter -q parameter `State.Running,False`
 
 ```
 OK: Status OK.
+```
+
+### Dropwizard / Fieldnames Containing '.' Example
+
+Simply choose a separator to  deal with data such as this:
+
+```
+{ "gauges": { "jvm.buffers.direct.capacity": {"value": 215415}}}
+```
+
+In this example I've chosen `_` to separate `guages` from `jvm` and `capacity` from `value`. The CLI invocation then becomes:
+
+```
+./check_http_json.py -H localhost:8081 -p metrics --key_exists gauges_jvm.buffers.direct.capacity_value -s _
 ```
 
 ## License
