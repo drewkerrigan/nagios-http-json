@@ -160,6 +160,7 @@ def parseArgs():
 		help='Gathers the values of these keys (key,UnitOfMeasure,Min,Max,WarnRange,CriticalRange) for Nagios performance data.\
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
+	parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
 
 	return parser.parse_args()
@@ -176,7 +177,11 @@ if __name__ == "__main__":
 	args = parseArgs()
 	nagios = NagiosHelper()
 
-	url = "http://%s" % args.host
+	if args.ssl:
+		url = "https://%s" % args.host
+	else:
+		url = "http://%s" % args.host
+
 	if args.path: url += "/%s" % args.path
 	debugPrint(args.debug, "url:%s" % url)
 
