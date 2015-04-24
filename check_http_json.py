@@ -7,7 +7,7 @@ Generic Nagios plugin which checks json values from a given endpoint against arg
 and determines the status and performance data for that service.
 """
 
-import httplib, urllib, urllib2
+import httplib, urllib, urllib2, base64
 import json
 import argparse
 from pprint import pprint
@@ -144,6 +144,7 @@ def parseArgs():
 			and determines the status and performance data for that service')
 
 	parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
+	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', 
 		help='Checks existence of these keys to determine status.')
@@ -182,6 +183,9 @@ if __name__ == "__main__":
 	# Attempt to reach the endpoint
 	try:
 		req = urllib2.Request(url)
+		if args.auth:
+			base64str = base64.encodestring(args.auth).replace('\n', '')
+			req.add_header('Authorization', 'Basic %s' % base64str)
 		response = urllib2.urlopen(req)
 	except HTTPError as e:
 		nagios.unknown("HTTPError[%s], url:%s" % (str(e.code), url))
