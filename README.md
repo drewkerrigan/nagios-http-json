@@ -230,7 +230,7 @@ Simply choose a separator to  deal with data such as this:
 In this example I've chosen `_` to separate `guages` from `jvm` and `capacity` from `value`. The CLI invocation then becomes:
 
 ```
-./check_http_json.py -H localhost:8081 -p metrics --key_exists gauges_jvm.buffers.direct.capacity_value -s _
+./check_http_json.py -H localhost:8081 -p metrics --key_exists gauges_jvm.buffers.direct.capacity_value -f _
 ```
 
 ## License
