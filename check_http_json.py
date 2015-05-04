@@ -46,6 +46,27 @@ class JsonHelper:
 		self.data = json_data
 		self.separator = separator
 
+	def getSubElement(self, key, data):
+		separatorIndex = key.find(self.separator)
+		partialKey = key[:separatorIndex]
+		remainingKey = key[separatorIndex + 1:]
+		if partialKey in data:
+			return self.get(remainingKey, data[partialKey])
+		else:
+			return (None, 'not_found')
+
+	def getSubArrayElement(self, key, data):
+		subElemKey = key[:key.find('[')]
+		index = int(key[key.find('[') + 1:key.find(']')])
+		remainingKey = key[key.find('].') + 2:]
+		if subElemKey in data:
+			if index < len(data[subElemKey]):
+				return self.get(remainingKey, data[subElemKey][index])
+			else:
+				return (None, 'not_found')
+		else:
+			return (None, 'not_found')
+			
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
 	def lte(self, key, value): return self.exists(key) and float(self.get(key)) <= float(value)
 	def gte(self, key, value): return self.exists(key) and float(self.get(key)) >= float(value)
@@ -57,13 +78,25 @@ class JsonHelper:
 		else:
 			data = self.data
 
-		if self.separator in key:
-			return self.get(key[key.find(self.separator) + 1:], data[key[:key.find(self.separator)]])
-		else:
-			if key in data:
-				return  data[key]
+		if len(key) <= 0:
+			return data
+
+		if key.find(self.separator) != -1 and key.find('[') != -1 :
+			if key.find(self.separator) < key.find('[') :
+				return self.getSubElement(key, data)
 			else:
-				return (None, 'not_found')
+				return self.getSubArrayElement(key, data)
+		else:
+			if key.find(self.separator) != -1 : 
+				return self.getSubElement(key, data)
+			else:
+				if key.find('[') != -1 :
+					return self.getSubArrayElement(key, data)
+				else:
+					if key in data:
+						return data[key]
+					else:
+						return (None, 'not_found')
 
 class JsonRuleProcessor:
 	"""Perform checks and gather values from a JSON dict given rules and metrics definitions"""
