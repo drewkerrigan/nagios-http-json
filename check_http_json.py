@@ -45,6 +45,8 @@ class JsonHelper:
 	def __init__(self, json_data, separator):
 		self.data = json_data
 		self.separator = separator
+		self.arrayOpener = '('
+		self.arrayCloser = ')'
 
 	def getSubElement(self, key, data):
 		separatorIndex = key.find(self.separator)
@@ -56,9 +58,12 @@ class JsonHelper:
 			return (None, 'not_found')
 
 	def getSubArrayElement(self, key, data):
-		subElemKey = key[:key.find('[')]
-		index = int(key[key.find('[') + 1:key.find(']')])
-		remainingKey = key[key.find('].') + 2:]
+		subElemKey = key[:key.find(self.arrayOpener)]
+		index = int(key[key.find(self.arrayOpener) + 1:key.find(self.arrayCloser)])
+		remainingKey = key[key.find(self.arrayCloser + self.separator) + 2:]
+		if key.find(self.arrayCloser + self.separator) == -1:
+			remainingKey = key[key.find(self.arrayCloser) + 1:]
+
 		if subElemKey in data:
 			if index < len(data[subElemKey]):
 				return self.get(remainingKey, data[subElemKey][index])
@@ -81,8 +86,8 @@ class JsonHelper:
 		if len(key) <= 0:
 			return data
 
-		if key.find(self.separator) != -1 and key.find('[') != -1 :
-			if key.find(self.separator) < key.find('[') :
+		if key.find(self.separator) != -1 and key.find(self.arrayOpener) != -1 :
+			if key.find(self.separator) < key.find(self.arrayOpener) :
 				return self.getSubElement(key, data)
 			else:
 				return self.getSubArrayElement(key, data)
@@ -90,7 +95,7 @@ class JsonHelper:
 			if key.find(self.separator) != -1 : 
 				return self.getSubElement(key, data)
 			else:
-				if key.find('[') != -1 :
+				if key.find(self.arrayOpener) != -1 :
 					return self.getSubArrayElement(key, data)
 				else:
 					if key in data:
