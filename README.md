@@ -89,9 +89,13 @@ optional arguments:
                         (key,UnitOfMeasure,Min,Max).
   -s, --ssl             HTTPS mode.
   -f SEPARATOR, --field_separator SEPARATOR
-                        Json Field separator, defaults to "."
+                        Json Field separator, defaults to "." ; Select element
+                        in an array with "(" ")"
   -d, --debug           Debug mode.
 ```
+
+Access a specific JSON field by following this syntax: `alpha.beta.gamma(3).theta.omega(0)`
+Dots are field separators (changeable), parantheses are for entering arrays.
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
 

@@ -201,7 +201,7 @@ def parseArgs():
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
 	parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
-	parser.add_argument('-f', '--field_separator', dest='separator', help='Json Field separator, defaults to "."')
+	parser.add_argument('-f', '--field_separator', dest='separator', help='Json Field separator, defaults to "." ; Select element in an array with "(" ")"')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
 
 	return parser.parse_args()
