@@ -101,7 +101,7 @@ If the root of the JSON data is itself an array like the following:
 
 ```
 [
-{ "gauges": { "jvm.buffers.direct.capacity": {"value1": 215415}}}
+{ "gauges": { "jvm.buffers.direct.capacity": {"value": 215415}}}
 ]
 ```
 
