@@ -97,6 +97,20 @@ optional arguments:
 Access a specific JSON field by following this syntax: `alpha.beta.gamma(3).theta.omega(0)`
 Dots are field separators (changeable), parantheses are for entering arrays.
 
+If the root of the JSON data is itself an array like the following:
+
+```
+[
+{ "gauges": { "jvm.buffers.direct.capacity": {"value1": 215415}}}
+]
+```
+
+The beginning of the key should start with ($index) as in this example:
+
+```
+./check_http_json.py -H localhost:8081 -p metrics --key_exists "(0)_gauges_jvm.buffers.direct.capacity_value" -f _
+```
+
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
 
 ### Docker Info Example Plugin

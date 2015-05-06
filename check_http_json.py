@@ -70,7 +70,10 @@ class JsonHelper:
 			else:
 				return (None, 'not_found')
 		else:
-			return (None, 'not_found')
+			if not subElemKey:
+				return self.get(remainingKey, data[index])
+			else:
+				return (None, 'not_found')
 			
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) == value
 	def lte(self, key, value): return self.exists(key) and float(self.get(key)) <= float(value)
