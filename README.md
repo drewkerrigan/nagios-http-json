@@ -62,6 +62,7 @@ service
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Host.
+  -H PORT, --port PORT  TCP port.
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
@@ -88,6 +89,8 @@ optional arguments:
                         this parameter are: (key), (key,UnitOfMeasure),
                         (key,UnitOfMeasure,Min,Max).
   -s, --ssl             HTTPS mode.
+  -t TIMEOUT, --timeout TIMEOUT
+                        Connection timeout (seconds)
   -f SEPARATOR, --field_separator SEPARATOR
                         Json Field separator, defaults to "." ; Select element
                         in an array with "(" ")"

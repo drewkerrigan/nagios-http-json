@@ -187,6 +187,7 @@ def parseArgs():
 			and determines the status and performance data for that service')
 
 	parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
+	parser.add_argument('-P', '--port', dest='port', required=False, help='TCP port')
 	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', 
@@ -204,6 +205,7 @@ def parseArgs():
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
 	parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
+	parser.add_argument('-t', '--timeout', type=int, help='Connection timeout (seconds)')
 	parser.add_argument('-f', '--field_separator', dest='separator', help='Json Field separator, defaults to "." ; Select element in an array with "(" ")"')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
 
@@ -226,6 +228,7 @@ if __name__ == "__main__":
 	else:
 		url = "http://%s" % args.host
 
+	if args.port: url += ":%s" % args.port
 	if args.path: url += "/%s" % args.path
 	debugPrint(args.debug, "url:%s" % url)
 
@@ -235,7 +238,10 @@ if __name__ == "__main__":
 		if args.auth:
 			base64str = base64.encodestring(args.auth).replace('\n', '')
 			req.add_header('Authorization', 'Basic %s' % base64str)
-		response = urllib2.urlopen(req)
+		if args.timeout:
+			response = urllib2.urlopen(req, timeout=args.timeout)
+		else:
+			response = urllib2.urlopen(req)
 	except HTTPError as e:
 		nagios.unknown("HTTPError[%s], url:%s" % (str(e.code), url))
 	except URLError as e:
