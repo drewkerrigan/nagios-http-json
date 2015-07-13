@@ -47,13 +47,13 @@ More info about options in Usage.
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] -H HOST [-B AUTH] [-p PATH]
+usage: check_http_json.py [-h] -H HOST [-P PORT] [-B AUTH] [-p PATH]
                           [-e [KEY_LIST [KEY_LIST ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
                           [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]] [-s]
-                          [-f SEPARATOR] [-d]
+                          [-t TIMEOUT] [-f SEPARATOR] [-d]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -62,7 +62,7 @@ service
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Host.
-  -H PORT, --port PORT  TCP port.
+  -P PORT, --port PORT  TCP port
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
