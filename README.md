@@ -67,7 +67,8 @@ optional arguments:
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
-                        Checks existence of these keys to determine status.
+                        Checks existence of these keys to determine status. Multiple key values can
+                        be delimited with colon (key,value1:value2).
   -q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]], --key_equals [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]
                         Checks equality of these keys and values (key,value
                         key2,value2) to determine status.
