@@ -190,6 +190,7 @@ def parseArgs():
 	parser.add_argument('-P', '--port', dest='port', required=False, help='TCP port')
 	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
+	parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', 
 		help='Checks existence of these keys to determine status.')
 	parser.add_argument('-q', '--key_equals', dest='key_value_list', nargs='*', 
@@ -239,8 +240,12 @@ if __name__ == "__main__":
 		if args.auth:
 			base64str = base64.encodestring(args.auth).replace('\n', '')
 			req.add_header('Authorization', 'Basic %s' % base64str)
-		if args.timeout:
+		if args.timeout and args.data:
+			response = urllib2.urlopen(req, timeout=args.timeout, data=args.data)
+		elif args.timeout:
 			response = urllib2.urlopen(req, timeout=args.timeout)
+		elif args.data:
+			response = urllib2.urlopen(req, data=args.data)
 		else:
 			response = urllib2.urlopen(req)
 	except HTTPError as e:
