@@ -47,7 +47,7 @@ More info about options in Usage.
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] -H HOST [-P PORT] [-B AUTH] [-p PATH]
+usage: check_http_json.py [-h] -H HOST [-P PORT] [-B AUTH] [-p PATH] [-D DATA]
                           [-e [KEY_LIST [KEY_LIST ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
@@ -66,6 +66,7 @@ optional arguments:
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
+  -D DATA, --data DATA  The http payload to send as an POST.
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
                         Checks existence of these keys to determine status. Multiple key values can
                         be delimited with colon (key,value1:value2).
