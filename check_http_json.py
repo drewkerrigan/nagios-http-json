@@ -9,6 +9,7 @@ and determines the status and performance data for that service.
 
 import httplib, urllib, urllib2, base64
 import json
+import sys
 import argparse
 from pprint import pprint
 from urllib2 import HTTPError
@@ -186,9 +187,9 @@ def parseArgs():
 			'Nagios plugin which checks json values from a given endpoint against argument specified rules\
 			and determines the status and performance data for that service')
 
-	parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
-	parser.add_argument('-P', '--port', dest='port', required=False, help='TCP port')
-	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
+	parser.add_argument('-H', '--host', dest='host', default='localhost', help='Host.')
+	parser.add_argument('-P', '--port', dest='port', help='TCP port')
+	parser.add_argument('-B', '--basic-auth', dest='auth', help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
 	parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*',
@@ -211,7 +212,11 @@ def parseArgs():
 	parser.add_argument('-f', '--field_separator', dest='separator', help='Json Field separator, defaults to "." ; Select element in an array with "(" ")"')
 	parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
 
-	return parser.parse_args()
+	if len(sys.argv) == 1:
+		parser.print_help()
+		exit(0)
+	else:
+		return parser.parse_args()
 
 def debugPrint(debug_flag, message, pretty_flag=False):
 	if debug_flag:
