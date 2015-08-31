@@ -31,7 +31,7 @@ class NagiosHelper:
 			text += "|%s" % self.performance_data
 		return text
 
-	def setCodeAndMessage(self, code, text): 
+	def setCodeAndMessage(self, code, text):
 		self.code = code
 		self.message_text = text
 
@@ -74,7 +74,7 @@ class JsonHelper:
 				return self.get(remainingKey, data[index])
 			else:
 				return (None, 'not_found')
-			
+
 	def equals(self, key, value): return self.exists(key) and str(self.get(key)) in value.split(':')
 	def lte(self, key, value): return self.exists(key) and float(self.get(key)) <= float(value)
 	def gte(self, key, value): return self.exists(key) and float(self.get(key)) >= float(value)
@@ -95,7 +95,7 @@ class JsonHelper:
 			else:
 				return self.getSubArrayElement(key, data)
 		else:
-			if key.find(self.separator) != -1 : 
+			if key.find(self.separator) != -1 :
 				return self.getSubElement(key, data)
 			else:
 				if key.find(self.arrayOpener) != -1 :
@@ -178,7 +178,7 @@ class JsonRuleProcessor:
 
 				metrics += ' '
 
-				
+
 		return "%s" % metrics
 
 def parseArgs():
@@ -191,18 +191,18 @@ def parseArgs():
 	parser.add_argument('-B', '--basic-auth', dest='auth', required=False, help='Basic auth string "username:password"')
 	parser.add_argument('-p', '--path', dest='path', help='Path.')
 	parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
-	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', 
+	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*',
 		help='Checks existence of these keys to determine status.')
-	parser.add_argument('-q', '--key_equals', dest='key_value_list', nargs='*', 
+	parser.add_argument('-q', '--key_equals', dest='key_value_list', nargs='*',
 		help='Checks equality of these keys and values (key,value key2,value2) to determine status.\
 		Multiple key values can be delimited with colon (key,value1:value2)')
-	parser.add_argument('-l', '--key_lte', dest='key_lte_list', nargs='*', 
+	parser.add_argument('-l', '--key_lte', dest='key_lte_list', nargs='*',
 		help='Checks that these keys and values (key,value key2,value2) are less than or equal to\
 		the returned json value to determine status.')
-	parser.add_argument('-g', '--key_gte', dest='key_gte_list', nargs='*', 
+	parser.add_argument('-g', '--key_gte', dest='key_gte_list', nargs='*',
 		help='Checks that these keys and values (key,value key2,value2) are greater than or equal to\
 		the returned json value to determine status.')
-	parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*', 
+	parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
 		help='Gathers the values of these keys (key,UnitOfMeasure,Min,Max,WarnRange,CriticalRange) for Nagios performance data.\
 		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
@@ -263,9 +263,10 @@ if __name__ == "__main__":
 		processor = JsonRuleProcessor(data, args)
 		is_alive, reason = processor.isAlive()
 
+		# Gather metrics for display
+		nagios.performance_data = processor.getMetrics()
+
 		if is_alive:
-			# Rules all passed, attempt to get performance data
-			nagios.performance_data = processor.getMetrics()
 			nagios.ok("Status OK.")
 		else:
 			nagios.warning("Status check failed, reason:%s" % reason)
