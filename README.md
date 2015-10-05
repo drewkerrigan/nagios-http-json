@@ -9,6 +9,8 @@ This is a generic plugin for Nagios which checks json values from a given HTTP e
 * Nagios
 * Python
 
+### Nagios Configuration
+
 Assuming a standard installation of Nagios, the plugin can be executed from the machine that Nagios is running on.
 
 ```bash
