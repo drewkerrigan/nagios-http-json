@@ -47,13 +47,13 @@ More info about options in Usage.
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] -H HOST [-B AUTH] [-p PATH]
+usage: check_http_json.py [-h] -H HOST [-P PORT] [-B AUTH] [-p PATH] [-D DATA]
                           [-e [KEY_LIST [KEY_LIST ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
                           [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]] [-s]
-                          [-f SEPARATOR] [-d]
+                          [-t TIMEOUT] [-f SEPARATOR] [-d]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -62,12 +62,14 @@ service
 optional arguments:
   -h, --help            show this help message and exit
   -H HOST, --host HOST  Host.
-  -H PORT, --port PORT  TCP port.
+  -P PORT, --port PORT  TCP port
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
+  -D DATA, --data DATA  The http payload to send as an POST.
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
-                        Checks existence of these keys to determine status.
+                        Checks existence of these keys to determine status. Multiple key values can
+                        be delimited with colon (key,value1:value2).
   -q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]], --key_equals [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]
                         Checks equality of these keys and values (key,value
                         key2,value2) to determine status.
