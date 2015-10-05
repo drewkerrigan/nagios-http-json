@@ -114,7 +114,7 @@ class JsonRuleProcessor:
 		separator = '.'
 		if self.rules.separator: separator = self.rules.separator
 		self.helper = JsonHelper(self.data, separator)
-
+		debugPrint(rules_args.debug, "rules:%s" % rules_args)
 		debugPrint(rules_args.debug, "separator:%s" % separator)
 
 	def isAlive(self):
