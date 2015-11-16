@@ -68,30 +68,30 @@ optional arguments:
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -p PATH, --path PATH  Path.
-  -D DATA, --data DATA  The http payload to send as an POST.
+  -D DATA, --data DATA  The http payload to send as a POST
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
-                        Checks existence of these keys to determine status. Multiple key values can
-                        be delimited with colon (key,value1:value2).
+                        Checks existence of these keys to determine status.
   -q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]], --key_equals [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]
-                        Checks equality of these keys and values (key,value
-                        key2,value2) to determine status.
+                        Checks equality of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2)
   -l [KEY_LTE_LIST [KEY_LTE_LIST ...]], --key_lte [KEY_LTE_LIST [KEY_LTE_LIST ...]]
-                        Checks that these keys and values (key,value
+                        Checks that these keys and values (key[>alias],value
                         key2,value2) are less than or equal to the returned
                         json value to determine status.
   -g [KEY_GTE_LIST [KEY_GTE_LIST ...]], --key_gte [KEY_GTE_LIST [KEY_GTE_LIST ...]]
-                        Checks that these keys and values (key,value
+                        Checks that these keys and values (key[>alias],value
                         key2,value2) are greater than or equal to the returned
                         json value to determine status.
   -m [METRIC_LIST [METRIC_LIST ...]], --key_metric [METRIC_LIST [METRIC_LIST ...]]
-                        Gathers the values of these keys
-                        (key,UnitOfMeasure,Min,Max,WarnRange,CriticalRange)
-                        for Nagios performance data. More information about
-                        Range format and units of measure for nagios can be
-                        found at https://nagios-
-                        plugins.org/doc/guidelines.html Additional formats for
-                        this parameter are: (key), (key,UnitOfMeasure),
-                        (key,UnitOfMeasure,Min,Max).
+                        Gathers the values of these keys (key[>alias],UnitOfMe
+                        asure,Min,Max,WarnRange,CriticalRange) for Nagios
+                        performance data. More information about Range format
+                        and units of measure for nagios can be found at
+                        nagios-plugins.org/doc/guidelines.html Additional
+                        formats for this parameter are: (key),
+                        (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).
   -s, --ssl             HTTPS mode.
   -t TIMEOUT, --timeout TIMEOUT
                         Connection timeout (seconds)
@@ -179,7 +179,7 @@ define command{
 #### Sample Output
 
 ```
-OK: Status OK.|'Containers'=1;0;1000 'Images'=11;0;0 'NEventsListener'=3;0;0 'NFd'=10;0;0 'NGoroutines'=14;0;0 'SwapLimit'=1;0;0 
+OK: Status OK.|'Containers'=1;0;1000 'Images'=11;0;0 'NEventsListener'=3;0;0 'NFd'=10;0;0 'NGoroutines'=14;0;0 'SwapLimit'=1;0;0
 ```
 
 ### Docker Container Monitor Example Plugin

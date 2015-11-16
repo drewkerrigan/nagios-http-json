@@ -106,6 +106,17 @@ class JsonHelper:
 					else:
 						return (None, 'not_found')
 
+def _getKeyAlias(original_key):
+	key = original_key
+	alias = original_key
+	if '>' in original_key:
+		keys = original_key.split('>')
+
+		if len(keys) == 2:
+			key, alias = keys
+
+	return key, alias
+
 class JsonRuleProcessor:
 	"""Perform checks and gather values from a JSON dict given rules and metrics definitions"""
 	def __init__(self, json_data, rules_args):
@@ -123,26 +134,30 @@ class JsonRuleProcessor:
 
 		if self.rules.key_list != None:
 			for k in self.rules.key_list:
-				if (self.helper.exists(k) == False):
-					reason += " Key %s did not exist." % k
+				key, alias = _getKeyAlias(k)
+				if (self.helper.exists(key) == False):
+					reason += " Key %s did not exist." % alias
 
 		if self.rules.key_value_list != None:
 			for kv in self.rules.key_value_list:
 				k, v = kv.split(',')
-				if (self.helper.equals(k, v) == False):
-					reason += " Value %s for key %s did not match." % (v, k)
+				key, alias = _getKeyAlias(k)
+				if (self.helper.equals(key, v) == False):
+					reason += " Value for key %s did not match %s." % (alias, v)
 
 		if self.rules.key_lte_list != None:
 			for kv in self.rules.key_lte_list:
 				k, v = kv.split(',')
-				if (self.helper.lte(k, v) == False):
-					reason += " Value %s was not less than or equal to value for key %s." % (v, k)
+				key, alias = _getKeyAlias(k)
+				if (self.helper.lte(key, v) == False):
+					reason += " Value for key %s was not less than or equal to %s." % (alias, v)
 
 		if self.rules.key_gte_list != None:
 			for kv in self.rules.key_gte_list:
 				k, v = kv.split(',')
-				if (self.helper.gte(k, v) == False):
-					reason += " Value %s was not greater than or equal to value for key %s." % (v, k)
+				key, alias = _getKeyAlias(k)
+				if (self.helper.gte(key, v) == False):
+					reason += " Value for key %s was not greater than or equal to %s." % (v, alias)
 
 		is_alive = (reason == '')
 
@@ -168,8 +183,10 @@ class JsonRuleProcessor:
 					if len(vals) == 6:
 						key,uom,minimum,maximum,warn_range,crit_range = vals
 
+				key, alias = _getKeyAlias(key)
+
 				if self.helper.exists(key):
-					metrics += "'%s'=%s" % (key, self.helper.get(key))
+					metrics += "'%s'=%s" % (alias, self.helper.get(key))
 					if uom: metrics += uom
 					metrics += ";%s" % minimum
 					metrics += ";%s" % maximum
@@ -194,17 +211,17 @@ def parseArgs():
 	parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*',
 		help='Checks existence of these keys to determine status.')
 	parser.add_argument('-q', '--key_equals', dest='key_value_list', nargs='*',
-		help='Checks equality of these keys and values (key,value key2,value2) to determine status.\
+		help='Checks equality of these keys and values (key[>alias],value key2,value2) to determine status.\
 		Multiple key values can be delimited with colon (key,value1:value2)')
 	parser.add_argument('-l', '--key_lte', dest='key_lte_list', nargs='*',
-		help='Checks that these keys and values (key,value key2,value2) are less than or equal to\
+		help='Checks that these keys and values (key[>alias],value key2,value2) are less than or equal to\
 		the returned json value to determine status.')
 	parser.add_argument('-g', '--key_gte', dest='key_gte_list', nargs='*',
-		help='Checks that these keys and values (key,value key2,value2) are greater than or equal to\
+		help='Checks that these keys and values (key[>alias],value key2,value2) are greater than or equal to\
 		the returned json value to determine status.')
 	parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
-		help='Gathers the values of these keys (key,UnitOfMeasure,Min,Max,WarnRange,CriticalRange) for Nagios performance data.\
-		More information about Range format and units of measure for nagios can be found at https://nagios-plugins.org/doc/guidelines.html\
+		help='Gathers the values of these keys (key[>alias],UnitOfMeasure,Min,Max,WarnRange,CriticalRange) for Nagios performance data.\
+		More information about Range format and units of measure for nagios can be found at nagios-plugins.org/doc/guidelines.html\
 		Additional formats for this parameter are: (key), (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).')
 	parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
 	parser.add_argument('-t', '--timeout', type=int, help='Connection timeout (seconds)')
