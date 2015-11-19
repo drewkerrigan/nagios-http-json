@@ -140,8 +140,8 @@ optional arguments:
 * **Critical:** `./check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"`
 * **Metrics with Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
 * **Metris with Critical:**
-    ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
-    ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
+        ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
+        ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
 
 #### Range Definitions
 
