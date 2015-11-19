@@ -37,7 +37,7 @@ Add the following command definition to your commands config (`commands.config`)
 
 define command{
         command_name    <command_name>
-        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-l|-g <rules>] [-m <metrics>]
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
         }
 
 ```
@@ -49,13 +49,15 @@ More info about options in Usage.
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] -H HOST [-P PORT] [-B AUTH] [-p PATH] [-D DATA]
+usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
+                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-f SEPARATOR]
+                          [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
+                          [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
                           [-e [KEY_LIST [KEY_LIST ...]]]
+                          [-E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
-                          [-l [KEY_LTE_LIST [KEY_LTE_LIST ...]]]
-                          [-g [KEY_GTE_LIST [KEY_GTE_LIST ...]]]
-                          [-m [METRIC_LIST [METRIC_LIST ...]]] [-s]
-                          [-t TIMEOUT] [-f SEPARATOR] [-d]
+                          [-Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]]
+                          [-m [METRIC_LIST [METRIC_LIST ...]]]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -63,46 +65,57 @@ service
 
 optional arguments:
   -h, --help            show this help message and exit
+  -d, --debug           Debug mode.
+  -s, --ssl             HTTPS mode.
   -H HOST, --host HOST  Host.
   -P PORT, --port PORT  TCP port
+  -p PATH, --path PATH  Path.
+  -t TIMEOUT, --timeout TIMEOUT
+                        Connection timeout (seconds)
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
-  -p PATH, --path PATH  Path.
   -D DATA, --data DATA  The http payload to send as a POST
+  -f SEPARATOR, --field_separator SEPARATOR
+                        Json Field separator, defaults to "." ; Select element
+                        in an array with "(" ")"
+  -w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]], --warning [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]
+                        Warning threshold for these values
+                        (key1[>alias],WarnRange key2[>alias],WarnRange).
+                        WarnRange is in the format [@]start:end, more
+                        information at nagios-plugins.org/doc/guidelines.html.
+  -c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]], --critical [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]
+                        Critical threshold for these values
+                        (key1[>alias],CriticalRange
+                        key2[>alias],CriticalRange. CriticalRange is in the
+                        format [@]start:end, more information at nagios-
+                        plugins.org/doc/guidelines.html.
   -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
                         Checks existence of these keys to determine status.
+                        Return warning if key is not present.
+  -E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]], --key_exists_critical [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]
+                        Same as -e but return critical if key is not present.
   -q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]], --key_equals [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]
                         Checks equality of these keys and values
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
-                        (key,value1:value2)
-  -l [KEY_LTE_LIST [KEY_LTE_LIST ...]], --key_lte [KEY_LTE_LIST [KEY_LTE_LIST ...]]
-                        Checks that these keys and values (key[>alias],value
-                        key2,value2) are less than or equal to the returned
-                        json value to determine status.
-  -g [KEY_GTE_LIST [KEY_GTE_LIST ...]], --key_gte [KEY_GTE_LIST [KEY_GTE_LIST ...]]
-                        Checks that these keys and values (key[>alias],value
-                        key2,value2) are greater than or equal to the returned
-                        json value to determine status.
+                        (key,value1:value2). Return warning if equality check
+                        fails
+  -Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]], --key_equals_critical [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]
+                        Same as -q but return critical if equality check
+                        fails.
   -m [METRIC_LIST [METRIC_LIST ...]], --key_metric [METRIC_LIST [METRIC_LIST ...]]
                         Gathers the values of these keys (key[>alias],UnitOfMe
-                        asure,Min,Max,WarnRange,CriticalRange) for Nagios
+                        asure,WarnRange,CriticalRange,Min,Max) for Nagios
                         performance data. More information about Range format
                         and units of measure for nagios can be found at
                         nagios-plugins.org/doc/guidelines.html Additional
-                        formats for this parameter are: (key),
-                        (key,UnitOfMeasure), (key,UnitOfMeasure,Min,Max).
-  -s, --ssl             HTTPS mode.
-  -t TIMEOUT, --timeout TIMEOUT
-                        Connection timeout (seconds)
-  -f SEPARATOR, --field_separator SEPARATOR
-                        Json Field separator, defaults to "." ; Select element
-                        in an array with "(" ")"
-  -d, --debug           Debug mode.
+                        formats for this parameter are: (key[>alias]),
+                        (key[>alias],UnitOfMeasure),
+                        (key[>alias],UnitOfMeasure,WarnRange,CriticalRange).
 ```
 
 Access a specific JSON field by following this syntax: `alpha.beta.gamma(3).theta.omega(0)`
-Dots are field separators (changeable), parantheses are for entering arrays.
+Dots are field separators (changeable), parentheses are for entering arrays.
 
 If the root of the JSON data is itself an array like the following:
 
@@ -153,14 +166,12 @@ Let's say we want to use `check_http_json.py` to read from Docker's `/info` HTTP
 `localhost.cfg`
 
 ```
-
 define service {
         use                             local-service
         host_name                       localhost
         service_description             Docker info status checker
         check_command                   check_docker
         }
-
 ```
 
 #### Command Definition with Arguments
@@ -168,12 +179,10 @@ define service {
 `commands.cfg`
 
 ```
-
 define command{
         command_name    check_docker
-        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H 127.0.0.1:4243 -p info -e Containers -q IPv4Forwarding,1 -l Debug,2 -g Images,1 -m Containers,,0,1000 Images NEventsListener NFd NGoroutines SwapLimit
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H 127.0.0.1:4243 -p info -e Containers -q IPv4Forwarding,1 -w Debug,2:2 -c Images,1:1 -m Containers,0:250,0:500,0,1000 Images NEventsListener NFd NGoroutines SwapLimit
         }
-
 ```
 
 #### Sample Output
@@ -201,14 +210,12 @@ OK: Status OK.|'Containers'=1;0;1000 'Images'=11;0;0 'NEventsListener'=3;0;0 'NF
 `localhost.cfg`
 
 ```
-
 define service {
         use                             local-service
         host_name                       localhost
         service_description             Docker container liveness check
         check_command                   check_my_container
         }
-
 ```
 
 #### Command Definition with Arguments
@@ -216,12 +223,10 @@ define service {
 `commands.cfg`
 
 ```
-
 define command{
         command_name    check_my_container
         command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H 127.0.0.1:4243 -p /containers/2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615/json -q ID,2356e8ccb3de8308ccb16cf8f5d157bc85ded5c3d8327b0dfb11818222b6f615 State.Running,True
         }
-
 ```
 
 #### Sample Output
