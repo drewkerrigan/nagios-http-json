@@ -84,13 +84,11 @@ optional arguments:
 
 ### Key Naming
 
-**Data**:
+**Data for key** `value`:
 
     { "value": 1000 }
 
-**Key**: `value`
-
-**Data**:
+**Data for key** `capacity.value`:
 
     {
         "capacity": {
@@ -98,9 +96,7 @@ optional arguments:
         }
     }
 
-**Key**: `capacity.value`
-
-**Data**:
+**Data for key** `(0).capacity.value`:
 
     [
         {
@@ -110,9 +106,7 @@ optional arguments:
         }
     ]
 
-**Key**: `(0).capacity.value`
-
-**Data**:
+**Data for separator** `-f _` **and key** `(0)_gauges_jvm.buffers.direct.capacity_value`:
 
     [
         {
@@ -124,10 +118,7 @@ optional arguments:
         }
     ]
 
-**Key**: `(0)_gauges_jvm.buffers.direct.capacity_value`
-**Separator**: `-f _`
-
-**Data**:
+**Data for keys** `ring_members(0)`, `ring_members(1)`, `ring_members(2)`:
 
     {
         "ring_members": [
@@ -136,8 +127,6 @@ optional arguments:
             "riak3@127.0.0.1"
         ]
     }
-
-**Keys**: `ring_members(0)`, `ring_members(1)`, `ring_members(2)`
 
 ### Thresholds and Ranges
 
