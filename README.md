@@ -136,25 +136,23 @@ optional arguments:
 
 #### Relevant Commands
 
-**Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
-**Critical:** `./check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"`
-**Metrics with Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
-**Metris with Critical:**
+* **Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
+* **Critical:** `./check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"`
+* **Metrics with Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
+* **Metris with Critical:**
 
     ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
     ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
 
 #### Range Definitions
 
-**Format:** [@]START:END
-
-**Generates a Warning or Critical if...**
-
-**Value is less than 0 or greater than 1000:** `1000` or `0:1000`
-**Value is greater than or equal to 1000, or less than or equal to 0:** `@1000` or `@0:1000`
-**Value is less than 1000:** `1000:`
-**Value is greater than 1000:** `~:1000`
-**Value is greater than or equal to 1000:** `@1000:`
+* **Format:** [@]START:END
+* **Generates a Warning or Critical if...**
+    * **Value is less than 0 or greater than 1000:** `1000` or `0:1000`
+    * **Value is greater than or equal to 1000, or less than or equal to 0:** `@1000` or `@0:1000`
+    * **Value is less than 1000:** `1000:`
+    * **Value is greater than 1000:** `~:1000`
+    * **Value is greater than or equal to 1000:** `@1000:`
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
 
