@@ -16,7 +16,8 @@ Executing `./check_http_json.py -h` will yield the following details:
 
 ```
 usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
-                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-f SEPARATOR]
+                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
+                          [-f SEPARATOR]
                           [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
                           [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
                           [-e [KEY_LIST [KEY_LIST ...]]]
@@ -41,6 +42,8 @@ optional arguments:
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -D DATA, --data DATA  The http payload to send as a POST
+  -A HEADERS, --headers HEADERS
+                        The http headers in JSON format.
   -f SEPARATOR, --field_separator SEPARATOR
                         Json Field separator, defaults to "." ; Select element
                         in an array with "(" ")"
@@ -155,6 +158,10 @@ optional arguments:
     * **Value is greater than or equal to 1000:** `@1000:`
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
+
+#### Using Headers 
+
+* `./check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"`
 
 ## Nagios Installation
 

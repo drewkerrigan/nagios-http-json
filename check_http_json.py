@@ -56,7 +56,7 @@ class NagiosHelper:
 	def append_critical(self, critical_message):
 		self.critical_message += critical_message
 	def append_unknown(self, unknown_message):
-		self.critical_message += critical_message
+		self.critical_message += unknown_message
 	def append_metrics(self, (performance_data, warning_message, critical_message)):
 		self.performance_data += performance_data
 		self.append_warning(warning_message)
@@ -275,6 +275,7 @@ def parseArgs():
 	parser.add_argument('-t', '--timeout', type=int, help='Connection timeout (seconds)')
 	parser.add_argument('-B', '--basic-auth', dest='auth', help='Basic auth string "username:password"')
 	parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
+	parser.add_argument('-A', '--headers', dest='headers', help='The http headers in JSON format.')
 	parser.add_argument('-f', '--field_separator', dest='separator',
 		help='Json Field separator, defaults to "." ; Select element in an array with "(" ")"')
 	parser.add_argument('-w', '--warning', dest='key_threshold_warning', nargs='*',
@@ -409,6 +410,11 @@ if __name__ == "__main__":
 		if args.auth:
 			base64str = base64.encodestring(args.auth).replace('\n', '')
 			req.add_header('Authorization', 'Basic %s' % base64str)
+		if args.headers:
+			headers=json.loads(args.headers)
+			debugPrint(args.debug, "Headers:\n %s" % headers)
+			for header in headers:
+				req.add_header(header, headers[header])
 		if args.timeout and args.data:
 			response = urllib2.urlopen(req, timeout=args.timeout, data=args.data)
 		elif args.timeout:
