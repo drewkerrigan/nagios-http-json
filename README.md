@@ -34,7 +34,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -d, --debug           Debug mode.
   -s, --ssl             HTTPS mode.
-  -i, --ignorecerts     Ignore SSL Certificates.
+  -i, --ignorecerts     Ignore Untrusted SSL Certificates.
   -H HOST, --host HOST  Host.
   -P PORT, --port PORT  TCP port
   -p PATH, --path PATH  Path.
