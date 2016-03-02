@@ -15,16 +15,16 @@ This is a generic plugin for Nagios which checks json values from a given HTTP e
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
-                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
-                          [-f SEPARATOR]
-                          [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
-                          [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
-                          [-e [KEY_LIST [KEY_LIST ...]]]
-                          [-E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]]
-                          [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
-                          [-Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]]
-                          [-m [METRIC_LIST [METRIC_LIST ...]]]
+usage: check_http_json2.py [-h] [-d] [-s] [-i] -H HOST [-P PORT] [-p PATH]
+                           [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
+                           [-f SEPARATOR]
+                           [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
+                           [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
+                           [-e [KEY_LIST [KEY_LIST ...]]]
+                           [-E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]]
+                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
+                           [-Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]]
+                           [-m [METRIC_LIST [METRIC_LIST ...]]]
 
 Nagios plugin which checks json values from a given endpoint against argument
 specified rules and determines the status and performance data for that
@@ -34,6 +34,7 @@ optional arguments:
   -h, --help            show this help message and exit
   -d, --debug           Debug mode.
   -s, --ssl             HTTPS mode.
+  -i, --ignorecerts     Ignore SSL Certificates.
   -H HOST, --host HOST  Host.
   -P PORT, --port PORT  TCP port
   -p PATH, --path PATH  Path.
