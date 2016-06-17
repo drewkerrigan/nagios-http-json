@@ -407,6 +407,7 @@ if __name__ == "__main__":
 	# Attempt to reach the endpoint
 	try:
 		req = urllib2.Request(url)
+		req.add_header("User-Agent", "nagios-http-json")
 		if args.auth:
 			base64str = base64.encodestring(args.auth).replace('\n', '')
 			req.add_header('Authorization', 'Basic %s' % base64str)
