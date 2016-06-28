@@ -7,9 +7,10 @@ Generic Nagios plugin which checks json values from a given endpoint against arg
 and determines the status and performance data for that service.
 """
 
-import httplib, urllib, urllib2, base64
+import urllib2, base64
 import json
 import argparse
+import ssl
 import sys
 from pprint import pprint
 from urllib2 import HTTPError
@@ -276,6 +277,7 @@ def parseArgs():
 	parser.add_argument('-B', '--basic-auth', dest='auth', help='Basic auth string "username:password"')
 	parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
 	parser.add_argument('-A', '--headers', dest='headers', help='The http headers in JSON format.')
+	parser.add_argument('-I', '--insecure', dest='insecure', help='Do not validate certificates', action='store_true')
 	parser.add_argument('-f', '--field_separator', dest='separator',
 		help='Json Field separator, defaults to "." ; Select element in an array with "(" ")"')
 	parser.add_argument('-w', '--warning', dest='key_threshold_warning', nargs='*',
@@ -405,6 +407,12 @@ if __name__ == "__main__":
 	if args.path: url += "/%s" % args.path
 	debugPrint(args.debug, "url:%s" % url)
 	# Attempt to reach the endpoint
+
+	ctx = ssl.create_default_context()
+	if args.insecure:
+		ctx.check_hostname = False
+		ctx.verify_mode = ssl.CERT_NONE
+
 	try:
 		req = urllib2.Request(url)
 		req.add_header("User-Agent", "nagios-http-json")
@@ -417,13 +425,13 @@ if __name__ == "__main__":
 			for header in headers:
 				req.add_header(header, headers[header])
 		if args.timeout and args.data:
-			response = urllib2.urlopen(req, timeout=args.timeout, data=args.data)
+			response = urllib2.urlopen(req, timeout=args.timeout, data=args.data, context=ctx)
 		elif args.timeout:
-			response = urllib2.urlopen(req, timeout=args.timeout)
+			response = urllib2.urlopen(req, timeout=args.timeout, context=ctx)
 		elif args.data:
-			response = urllib2.urlopen(req, data=args.data)
+			response = urllib2.urlopen(req, data=args.data, context=ctx)
 		else:
-			response = urllib2.urlopen(req)
+			response = urllib2.urlopen(req, context=ctx)
 	except HTTPError as e:
 		nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
 	except URLError as e:

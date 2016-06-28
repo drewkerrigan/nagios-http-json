@@ -16,7 +16,7 @@ Executing `./check_http_json.py -h` will yield the following details:
 
 ```
 usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
-                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
+                          [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS] [-I]
                           [-f SEPARATOR]
                           [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
                           [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
@@ -44,6 +44,7 @@ optional arguments:
   -D DATA, --data DATA  The http payload to send as a POST
   -A HEADERS, --headers HEADERS
                         The http headers in JSON format.
+  -I, --insecure        Do not validate certificates
   -f SEPARATOR, --field_separator SEPARATOR
                         Json Field separator, defaults to "." ; Select element
                         in an array with "(" ")"
@@ -81,6 +82,7 @@ optional arguments:
                         formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure),
                         (key[>alias],UnitOfMeasure,WarnRange,CriticalRange).
+
 ```
 
 ## Examples
