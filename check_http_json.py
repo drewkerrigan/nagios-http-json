@@ -127,6 +127,28 @@ class JsonHelper:
                     else:
                         return (None, 'not_found')
 
+    def expandKey(self, key, keys):
+        if '(*)' not in key:
+            keys.append(key)
+            return keys
+        subElemKey = ''
+        if key.find('(*)') > 0:
+            subElemKey = key[:key.find('(*)')-1]
+        remainingKey = key[key.find('(*)')+3:]
+        elemData = self.get(subElemKey)
+        if elemData is (None, 'not_found'):
+            keys.append(key)
+            return keys
+        if subElemKey is not '':
+            subElemKey = subElemKey + '.'
+        for i in range(len(elemData)):
+            newKey = subElemKey + '(' + str(i) + ')' + remainingKey
+            newKeys = self.expandKey(newKey, [])
+            for j in newKeys:
+                keys.append(j)
+
+        return keys
+
 def _getKeyAlias(original_key):
     key = original_key
     alias = original_key
@@ -230,7 +252,14 @@ class JsonRuleProcessor:
         warning = ''
         critical = ''
         if self.rules.metric_list != None:
+            metric_list = []
+
             for metric in self.rules.metric_list:
+                newKeys = self.helper.expandKey(metric, [])
+                for k in newKeys:
+                    metric_list.append(k)
+
+            for metric in metric_list:
                 key = metric
                 minimum = maximum = warn_range = crit_range = None
                 uom = ''
