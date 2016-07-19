@@ -199,6 +199,26 @@ class JsonRuleProcessor:
         self.helper = JsonHelper(self.data, separator)
         debugPrint(rules_args.debug, "rules:%s" % rules_args)
         debugPrint(rules_args.debug, "separator:%s" % separator)
+        self.metric_list = self.expandKeys(self.rules.metric_list)
+        self.key_threshold_warning = self.expandKeys(
+            self.rules.key_threshold_warning)
+        self.key_threshold_critical = self.expandKeys(
+            self.rules.key_threshold_critical)
+        self.key_value_list = self.expandKeys(self.rules.key_value_list)
+        self.key_list = self.expandKeys(self.rules.key_list)
+        self.key_value_list_critical = self.expandKeys(
+            self.rules.key_value_list_critical)
+        self.key_list_critical = self.expandKeys(self.rules.key_list_critical)
+
+    def expandKeys(self, src):
+        if src is None:
+            return
+        dest = []
+        for key in src:
+            newKeys = self.helper.expandKey(key, [])
+            for k in newKeys:
+                dest.append(k)
+        return dest
 
     def checkExists(self, exists_list):
         failure = ''
@@ -267,22 +287,22 @@ class JsonRuleProcessor:
 
     def checkWarning(self):
         failure = ''
-        if self.rules.key_threshold_warning is not None:
-            failure += self.checkThresholds(self.rules.key_threshold_warning)
-        if self.rules.key_value_list is not None:
-            failure += self.checkEquality(self.rules.key_value_list)
-        if self.rules.key_list is not None:
-            failure += self.checkExists(self.rules.key_list)
+        if self.key_threshold_warning is not None:
+            failure += self.checkThresholds(self.key_threshold_warning)
+        if self.key_value_list is not None:
+            failure += self.checkEquality(self.key_value_list)
+        if self.key_list is not None:
+            failure += self.checkExists(self.key_list)
         return failure
 
     def checkCritical(self):
         failure = ''
-        if self.rules.key_threshold_critical is not None:
-            failure += self.checkThresholds(self.rules.key_threshold_critical)
-        if self.rules.key_value_list_critical is not None:
-            failure += self.checkEquality(self.rules.key_value_list_critical)
-        if self.rules.key_list_critical is not None:
-            failure += self.checkExists(self.rules.key_list_critical)
+        if self.key_threshold_critical is not None:
+            failure += self.checkThresholds(self.key_threshold_critical)
+        if self.key_value_list_critical is not None:
+            failure += self.checkEquality(self.key_value_list_critical)
+        if self.key_list_critical is not None:
+            failure += self.checkExists(self.key_list_critical)
         return failure
 
     def checkMetrics(self):
@@ -291,15 +311,8 @@ class JsonRuleProcessor:
         metrics = ''
         warning = ''
         critical = ''
-        if self.rules.metric_list is not None:
-            metric_list = []
-
-            for metric in self.rules.metric_list:
-                newKeys = self.helper.expandKey(metric, [])
-                for k in newKeys:
-                    metric_list.append(k)
-
-            for metric in metric_list:
+        if self.metric_list is not None:
+            for metric in self.metric_list:
                 key = metric
                 minimum = maximum = warn_range = crit_range = None
                 uom = ''
@@ -310,8 +323,8 @@ class JsonRuleProcessor:
                     if len(vals) == 4:
                         key, uom, warn_range, crit_range = vals
                     if len(vals) == 6:
-                        key, uom, warn_range, crit_range,
-                        minimum, maximum = vals
+                        key, uom, warn_range, crit_range, \
+                            minimum, maximum = vals
                 key, alias = _getKeyAlias(key)
                 if self.helper.exists(key):
                     metrics += "'%s'=%s" % (alias, self.helper.get(key))
@@ -476,6 +489,8 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
                             '{"metric": 5}', CRITICAL_CODE)
             self.check_data(RulesHelper().dash_m(['metric,s,@1:4,@6:10,1,10']),
                             '{"metric": 5}', OK_CODE)
+            self.check_data(RulesHelper().dash_m(['(*).value,s,1:5,1:5']),
+                            '[{"value": 5},{"value": 100}]', CRITICAL_CODE)
 
         def test_exists(self):
             self.check_data(RulesHelper().dash_e(['nothere']),
@@ -526,6 +541,8 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
                             '{"metric": 5}', WARNING_CODE)
             self.check_data(RulesHelper().dash_w(['metric,@1:5']),
                             '{"metric": 5}', WARNING_CODE)
+            self.check_data(RulesHelper().dash_w(['(*).value,@1:5']),
+                            '[{"value": 5},{"value": 1000}]', WARNING_CODE)
 
         def test_critical_thresholds(self):
             self.check_data(RulesHelper().dash_c(['metric,5']),
@@ -560,6 +577,8 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
                             '{"metric": 5}', CRITICAL_CODE)
             self.check_data(RulesHelper().dash_c(['metric,@1:5']),
                             '{"metric": 5}', CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_c(['(*).value,@1:5']),
+                            '[{"value": 5},{"value": 1000}]', CRITICAL_CODE)
 
         def test_separator(self):
             rules = RulesHelper()
@@ -570,6 +589,14 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
                 '''[{ "gauges": { "jvm.buffers.direct.capacity": [
                 {"value": 215415},{"value": 1234}]}}]''',
                 OK_CODE)
+            self.check_data(
+                rules.dash_q(
+                    ['(*)_gauges_jvm.buffers.direct.capacity(1)_value,1234']),
+                '''[{ "gauges": { "jvm.buffers.direct.capacity": [
+                {"value": 215415},{"value": 1234}]}},
+                { "gauges": { "jvm.buffers.direct.capacity": [
+                {"value": 215415},{"value": 1235}]}}]''',
+                WARNING_CODE)
     unittest.main()
     exit(0)
 
