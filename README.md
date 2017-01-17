@@ -81,6 +81,12 @@ optional arguments:
                         formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure),
                         (key[>alias],UnitOfMeasure,WarnRange,CriticalRange).
+  --statsd_host STATSD_HOST
+                        StatsD host to send performance data.
+  --statsd_port STATSD_PORT
+                        StatsD host to send performance data
+  --statsd_prefix STATSD_PREFIX
+                        StatsD prefix to send performance data.
 ```
 
 ## Examples
