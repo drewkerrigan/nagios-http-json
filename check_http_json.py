@@ -56,7 +56,7 @@ class NagiosHelper:
     def append_critical(self, critical_message):
         self.critical_message += critical_message
     def append_unknown(self, unknown_message):
-        self.critical_message += unknown_message
+        self.unknown_message += unknown_message
     def append_metrics(self, (performance_data, warning_message, critical_message)):
         self.performance_data += performance_data
         self.append_warning(warning_message)
