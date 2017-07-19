@@ -10,13 +10,13 @@ and determines the status and performance data for that service.
 import httplib, urllib, urllib2, base64
 import json
 import argparse
+import statsd
 import sys
 from pprint import pprint
 from urllib2 import HTTPError
 from urllib2 import URLError
 
 # TEST = False
-
 
 OK_CODE = 0
 WARNING_CODE = 1
@@ -261,6 +261,20 @@ class JsonRuleProcessor:
                 metrics += ' '
         return ("%s" % metrics, warning, critical)
 
+    def checkMetricsStatsD(self):
+        """Return a StatsD specific performance metrics string given keys"""
+        metrics = {}
+        if self.rules.metric_list != None:
+            for metric in self.rules.metric_list:
+                key = metric
+                if ',' in metric:
+                    vals = metric.split(',')
+                    key = vals
+                key, alias = _getKeyAlias(key)
+                if self.helper.exists(key):
+                    metrics[alias] = self.helper.get(key)
+        return metrics
+
 def parseArgs():
     parser = argparse.ArgumentParser(description=
             'Nagios plugin which checks json values from a given endpoint against argument specified rules\
@@ -295,6 +309,9 @@ def parseArgs():
         help='Gathers the values of these keys (key[>alias],UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for Nagios performance data.\
         More information about Range format and units of measure for nagios can be found at nagios-plugins.org/doc/guidelines.html\
         Additional formats for this parameter are: (key[>alias]), (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange,CriticalRange).')
+    parser.add_argument('--statsd_host', dest='statsd_host', help='StatsD host to send performance data.')
+    parser.add_argument('--statsd_port', dest='statsd_port', type=int, default=8125, help='StatsD host to send performance data')
+    parser.add_argument('--statsd_prefix', dest='statsd_prefix', help='StatsD prefix to send performance data.')
 
     return parser.parse_args()
 
@@ -439,4 +456,9 @@ if __name__ == "__main__":
         nagios.append_metrics(processor.checkMetrics())
     # Print Nagios specific string and exit appropriately
     print nagios.getMessage()
+    if args.statsd_host and args.statsd_port and args.statsd_prefix:
+        stat = statsd.StatsClient(args.statsd_host, args.statsd_port, prefix=args.statsd_prefix)
+        for metric, value in processor.checkMetricsStatsD().iteritems():
+            stat.gauge(metric, value)
+    #pprint(processor.checkMetricsStatsD())
     exit(nagios.getCode())
