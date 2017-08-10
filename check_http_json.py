@@ -5,6 +5,9 @@ Check HTTP JSON Nagios Plugin
 
 Generic Nagios plugin which checks json values from a given endpoint against argument specified rules
 and determines the status and performance data for that service.
+Git repo found at: ssh://git@app01.stash.office.infra.cgn.travian.info:7999/sys/icinga_check_http_json.git
+Branch: tg
+Upstream: https://github.com/drewkerrigan/nagios-http-json
 """
 
 import httplib, urllib, urllib2, base64
