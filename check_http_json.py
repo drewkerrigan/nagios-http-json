@@ -182,19 +182,19 @@ class JsonRuleProcessor:
                 end = vals[1]
         if(start == '~'):
             if (invert and self.helper.lte(key, end)):
-                failure += " Value for key %s was less than or equal to %s." % (alias, end)
+                failure += " Value (%s) for key %s was less than or equal to %s." % (self.helper.get(key), alias, end)
             elif (not invert and self.helper.gt(key, end)):
-                failure += " Value for key %s was greater than %s." % (alias, end)
+                failure += " Value (%s) for key %s was greater than %s." % (self.helper.get(key), alias, end)
         elif(end == 'infinity'):
             if (invert and self.helper.gte(key, start)):
-                failure += " Value for key %s was greater than or equal to %s." % (alias, start)
+                failure += " Value (%s) for key %s was greater than or equal to %s." % (self.helper.get(key), alias, start)
             elif (not invert and self.helper.lt(key, start)):
-                failure += " Value for key %s was less than %s." % (alias, start)
+                failure += " Value (%s) for key %s was less than %s." % (self.helper.get(key), alias, start)
         else:
             if (invert and self.helper.gte(key, start) and self.helper.lte(key, end)):
-                failure += " Value for key %s was inside the range %s:%s." % (alias, start, end)
+                failure += " Value (%s) for key %s was inside the range %s:%s." % (self.helper.get(key), alias, start, end)
             elif (not invert and (self.helper.lt(key, start) or self.helper.gt(key, end))):
-                failure += " Value for key %s was outside the range %s:%s." % (alias, start, end)
+                failure += " Value (%s) for key %s was outside the range %s:%s." % (self.helper.get(key), alias, start, end)
         return failure
 
     def checkThresholds(self, threshold_list):
