@@ -11,6 +11,7 @@ import httplib, urllib, urllib2, base64
 import json
 import argparse
 import sys
+import ssl
 from pprint import pprint
 from urllib2 import HTTPError
 from urllib2 import URLError
@@ -269,6 +270,7 @@ def parseArgs():
     # parser.add_argument('-v', '--verbose', action='store_true', help='Verbose Output')
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
     parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
+    parser.add_argument('-k', '--insecure', action='store_true', help='do not check server SSL certificate')
     parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
     parser.add_argument('-p', '--path', dest='path', help='Path.')
@@ -404,6 +406,11 @@ if __name__ == "__main__":
     if args.port: url += ":%s" % args.port
     if args.path: url += "/%s" % args.path
     debugPrint(args.debug, "url:%s" % url)
+    if args.insecure:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+    else:
+        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        context.verify_mode = ssl.CERT_OPTIONAL
     # Attempt to reach the endpoint
     try:
         req = urllib2.Request(url)
@@ -416,13 +423,13 @@ if __name__ == "__main__":
             for header in headers:
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
-            response = urllib2.urlopen(req, timeout=args.timeout, data=args.data)
+            response = urllib2.urlopen(req, timeout=args.timeout, data=args.data, context=context)
         elif args.timeout:
-            response = urllib2.urlopen(req, timeout=args.timeout)
+            response = urllib2.urlopen(req, timeout=args.timeout, context=context)
         elif args.data:
-            response = urllib2.urlopen(req, data=args.data)
+            response = urllib2.urlopen(req, data=args.data, context=context)
         else:
-            response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, context=context)
     except HTTPError as e:
         nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
