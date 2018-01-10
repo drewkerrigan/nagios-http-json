@@ -168,6 +168,15 @@ class JsonRuleProcessor:
                 failure += " Value for key %s did not match %s." % (alias, v)
         return failure
 
+    def checkNonEquality(self, equality_list):
+        failure = ''
+        for kv in equality_list:
+            k, v = kv.split(',')
+            key, alias = _getKeyAlias(k)
+            if (self.helper.equals(key, v) == True):
+                failure += " Value for key %s matches %s." % (alias, v)
+        return failure
+
     def checkThreshold(self, key, alias, r):
         failure = ''
         invert = False
@@ -214,6 +223,8 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.rules.key_threshold_warning)
         if self.rules.key_value_list != None:
             failure += self.checkEquality(self.rules.key_value_list)
+        if self.rules.key_value_list_not != None:
+            failure += self.checkNonEquality(self.rules.key_value_list_not)
         if self.rules.key_list != None:
             failure += self.checkExists(self.rules.key_list)
         return failure
@@ -224,6 +235,8 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.rules.key_threshold_critical)
         if self.rules.key_value_list_critical != None:
             failure += self.checkEquality(self.rules.key_value_list_critical)
+        if self.rules.key_value_list_not_critical != None:
+            failure += self.checkNonEquality(self.rules.key_value_list_not_critical)
         if self.rules.key_list_critical != None:
             failure += self.checkExists(self.rules.key_list_critical)
         return failure
@@ -296,6 +309,11 @@ def parseArgs():
         Multiple key values can be delimited with colon (key,value1:value2). Return warning if equality check fails')
     parser.add_argument('-Q', '--key_equals_critical', dest='key_value_list_critical', nargs='*',
         help='Same as -q but return critical if equality check fails.')
+    parser.add_argument('-y', '--key_not_equals', dest='key_value_list_not', nargs='*',
+        help='Checks equality of these keys and values (key[>alias],value key2,value2) to determine status.\
+        Multiple key values can be delimited with colon (key,value1:value2). Return warning if equality check succeeds')
+    parser.add_argument('-Y', '--key_not_equals_critical', dest='key_value_list_not_critical', nargs='*',
+        help='Same as -q but return critical if equality check succeeds.')
     parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
         help='Gathers the values of these keys (key[>alias],UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for Nagios performance data.\
         More information about Range format and units of measure for nagios can be found at nagios-plugins.org/doc/guidelines.html\
@@ -315,7 +333,7 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
     class RulesHelper:
         separator = '.'
         debug = False
-        key_threshold_warning,key_value_list,key_list,key_threshold_critical,key_value_list_critical,key_list_critical,metric_list = None, None, None, None, None, None, None
+        key_threshold_warning,key_value_list,key_value_list_not,key_list,key_threshold_critical,key_value_list_critical,key_value_list_not_critical,key_list_critical,metric_list = None, None, None, None, None, None, None, None, None
         def dash_m(self, data):
             self.metric_list = data; return self
         def dash_e(self, data):
@@ -326,6 +344,10 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
             self.key_value_list = data; return self
         def dash_Q(self, data):
             self.key_value_list_critical = data; return self
+        def dash_y(self, data):
+            self.key_value_list_not = data; return self
+        def dash_Y(self, data):
+            self.key_value_list_not_critical = data; return self
         def dash_w(self, data):
             self.key_threshold_warning = data; return self
         def dash_c(self, data):
@@ -354,6 +376,10 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
             self.check_data(RulesHelper().dash_q(['metric,6']), '{"metric": 5}', WARNING_CODE)
             self.check_data(RulesHelper().dash_Q(['metric,6']), '{"metric": 5}', CRITICAL_CODE)
             self.check_data(RulesHelper().dash_q(['metric,5']), '{"metric": 5}', OK_CODE)
+        def test_non_equality(self):
+            self.check_data(RulesHelper().dash_y(['metric,6']), '{"metric": 6}', WARNING_CODE)
+            self.check_data(RulesHelper().dash_Y(['metric,6']), '{"metric": 6}', CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_y(['metric,5']), '{"metric": 6}', OK_CODE)
         def test_warning_thresholds(self):
             self.check_data(RulesHelper().dash_w(['metric,5']), '{"metric": 5}', OK_CODE)
             self.check_data(RulesHelper().dash_w(['metric,5:']), '{"metric": 5}', OK_CODE)
