@@ -287,6 +287,9 @@ def parseArgs():
     parser.add_argument('-d', '--debug', action='store_true', help='Debug mode.')
     parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
     parser.add_argument('-k', '--insecure', action='store_true', help='do not check server SSL certificate')
+    parser.add_argument('--cacert', required=('-s' in sys.argv or '--ssl' in sys.argv) and not ('-k' in sys.argv or '--insecure' in sys.argv), dest='cacert', help='SSL CA certificate')
+    parser.add_argument('--cert', required=('-s' in sys.argv or '--ssl' in sys.argv) and not ('-k' in sys.argv or '--insecure' in sys.argv), dest='cert', help='SSL client certificate')
+    parser.add_argument('--key', dest='key', help='SSL client key ( if not bundled into the cert )')
     parser.add_argument('-H', '--host', dest='host', required=True, help='Host.')
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
     parser.add_argument('-p', '--path', dest='path', help='Path.')
@@ -430,16 +433,18 @@ if __name__ == "__main__":
     nagios = NagiosHelper()
     if args.ssl:
         url = "https://%s" % args.host
+        if args.insecure:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        else:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            context.verify_mode = ssl.CERT_OPTIONAL
+            context.load_verify_locations(args.cacert)
+            context.load_cert_chain(args.cert,keyfile=args.key)
     else:
         url = "http://%s" % args.host
     if args.port: url += ":%s" % args.port
     if args.path: url += "/%s" % args.path
     debugPrint(args.debug, "url:%s" % url)
-    if args.insecure:
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-    else:
-        context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
-        context.verify_mode = ssl.CERT_OPTIONAL
     # Attempt to reach the endpoint
     try:
         req = urllib2.Request(url)
