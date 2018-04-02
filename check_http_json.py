@@ -161,7 +161,7 @@ class JsonRuleProcessor:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
             if (self.helper.equals(key, v) == False):
-                failure += " Value for key %s did not match %s." % (alias, v)
+                failure += " Key %s mismatch. %s != %s" % (alias, v, self.helper.get(key))
         return failure
 
     def checkThreshold(self, key, alias, r):
