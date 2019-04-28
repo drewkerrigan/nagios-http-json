@@ -161,7 +161,8 @@ class JsonRuleProcessor:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
             if (self.helper.equals(key, v) == False):
-                failure += " Value for key %s did not match %s." % (alias, v)
+                value = str(self.helper.get(key))
+                failure += " Value '%s' for key %s did not match %s." % (value, alias, v)
         return failure
 
     def checkThreshold(self, key, alias, r):
@@ -179,21 +180,22 @@ class JsonRuleProcessor:
             start = vals[0]
             if vals[1] != '':
                 end = vals[1]
+        value = str(self.helper.get(key))
         if(start == '~'):
             if (invert and self.helper.lte(key, end)):
-                failure += " Value for key %s was less than or equal to %s." % (alias, end)
+                failure += " Value '%s' for key %s was less than or equal to %s." % (value, alias, end)
             elif (not invert and self.helper.gt(key, end)):
-                failure += " Value for key %s was greater than %s." % (alias, end)
+                failure += " Value '%s' for key %s was greater than %s." % (value, alias, end)
         elif(end == 'infinity'):
             if (invert and self.helper.gte(key, start)):
-                failure += " Value for key %s was greater than or equal to %s." % (alias, start)
+                failure += " Value '%s' for key %s was greater than or equal to %s." % (value, alias, start)
             elif (not invert and self.helper.lt(key, start)):
-                failure += " Value for key %s was less than %s." % (alias, start)
+                failure += " Value '%s' for key %s was less than %s." % (value, alias, start)
         else:
             if (invert and self.helper.gte(key, start) and self.helper.lte(key, end)):
-                failure += " Value for key %s was inside the range %s:%s." % (alias, start, end)
+                failure += " Value '%s' for key %s was inside the range %s:%s." % (value, alias, start, end)
             elif (not invert and (self.helper.lt(key, start) or self.helper.gt(key, end))):
-                failure += " Value for key %s was outside the range %s:%s." % (alias, start, end)
+                failure += " Value '%s' for key %s was outside the range %s:%s." % (value, alias, start, end)
         return failure
 
     def checkThresholds(self, threshold_list):
