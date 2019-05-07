@@ -72,6 +72,8 @@ optional arguments:
   -Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]], --key_equals_critical [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]
                         Same as -q but return critical if equality check
                         fails.
+  -u Same as -Q but return critical if equality check
+                        fails.
   -m [METRIC_LIST [METRIC_LIST ...]], --key_metric [METRIC_LIST [METRIC_LIST ...]]
                         Gathers the values of these keys (key[>alias],UnitOfMe
                         asure,WarnRange,CriticalRange,Min,Max) for Nagios
