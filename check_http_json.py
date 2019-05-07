@@ -227,8 +227,8 @@ class JsonRuleProcessor:
     def checkUnknown(self):
         unknown = ''
     	if self.rules.key_value_list_unknown != None:
-        	unknown += self.checkEquality(self.rules.key_value_list_unknown)
-		return unknown
+            unknown += self.checkEquality(self.rules.key_value_list_unknown)
+	return unknown
 
     def checkMetrics(self):
         """Return a Nagios specific performance metrics string given keys and parameter definitions"""
