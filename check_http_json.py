@@ -224,6 +224,12 @@ class JsonRuleProcessor:
             failure += self.checkExists(self.rules.key_list_critical)
         return failure
 
+    def checkUnknown(self):
+        unknown = ''
+    	if self.rules.key_value_list_unknown != None:
+        	unknown += self.checkEquality(self.rules.key_value_list_unknown)
+		return unknown
+
     def checkMetrics(self):
         """Return a Nagios specific performance metrics string given keys and parameter definitions"""
         metrics = ''
@@ -291,6 +297,8 @@ def parseArgs():
         Multiple key values can be delimited with colon (key,value1:value2). Return warning if equality check fails')
     parser.add_argument('-Q', '--key_equals_critical', dest='key_value_list_critical', nargs='*',
         help='Same as -q but return critical if equality check fails.')
+    parser.add_argument('-u', '--key_equals_unknown', dest='key_value_list_unknown', nargs='*',
+	help='Same as -q but return unknown if equality check fails.')
     parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
         help='Gathers the values of these keys (key[>alias],UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for Nagios performance data.\
         More information about Range format and units of measure for nagios can be found at nagios-plugins.org/doc/guidelines.html\
@@ -437,6 +445,7 @@ if __name__ == "__main__":
         nagios.append_warning(processor.checkWarning())
         nagios.append_critical(processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
+        nagios.append_unknown(processor.checkUnknown())
     # Print Nagios specific string and exit appropriately
     print nagios.getMessage()
     exit(nagios.getCode())
