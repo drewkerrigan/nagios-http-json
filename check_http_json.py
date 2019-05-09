@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 
 """
 Check HTTP JSON Nagios Plugin
@@ -13,6 +13,7 @@ import base64
 import json
 import argparse
 import sys
+import ssl
 from pprint import pprint
 from urllib2 import HTTPError
 from urllib2 import URLError
@@ -237,6 +238,15 @@ class JsonRuleProcessor:
                 failure += " Value for key %s did not match %s." % (alias, v)
         return failure
 
+    def checkNonEquality(self, equality_list):
+        failure = ''
+        for kv in equality_list:
+            k, v = kv.split(',')
+            key, alias = _getKeyAlias(k)
+            if (self.helper.equals(key, v) == True):
+                failure += " Value for key %s matches %s." % (alias, v)
+        return failure
+
     def checkThreshold(self, key, alias, r):
         failure = ''
         invert = False
@@ -254,27 +264,28 @@ class JsonRuleProcessor:
                 end = vals[1]
         if(start == '~'):
             if (invert and self.helper.lte(key, end)):
-                failure += " Value for key %s was less than or equal to %s." % \
-                           (alias, end)
+                failure += " Value (%s) for key %s was less than or equal to %s." % \
+                           (self.helper.get(key), alias, end)
             elif (not invert and self.helper.gt(key, end)):
-                failure += " Value for key %s was greater than %s." % \
-                           (alias, end)
+                failure += " Value (%s) for key %s was greater than %s." % \
+                           (self.helper.get(key), alias, end)
         elif(end == 'infinity'):
             if (invert and self.helper.gte(key, start)):
-                failure += " Value for key %s was greater than or equal to %s." % \
-                           (alias, start)
+                failure += " Value (%s) for key %s was greater than or equal to %s." % \
+                           (self.helper.get(key), alias, start)
             elif (not invert and self.helper.lt(key, start)):
-                failure += " Value for key %s was less than %s." % \
-                           (alias, start)
+                failure += " Value (%s) for key %s was less than %s." % \
+                           (self.helper.get(key), alias, start)
         else:
             if (invert and self.helper.gte(key, start) and
                     self.helper.lte(key, end)):
-                failure += " Value for key %s was inside the range %s:%s." % \
-                           (alias, start, end)
+                failure += " Value (%s) for key %s was inside the range %s:%s." % \
+                           (self.helper.get(key), alias, start, end)
             elif (not invert and (self.helper.lt(key, start) or
                                   self.helper.gt(key, end))):
-                failure += " Value for key %s was outside the range %s:%s." % \
-                           (alias, start, end)
+                failure += " Value (%s) for key %s was outside the range %s:%s." % \
+                           (self.helper.get(key), alias, start, end)
+
         return failure
 
     def checkThresholds(self, threshold_list):
@@ -291,6 +302,8 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.key_threshold_warning)
         if self.key_value_list is not None:
             failure += self.checkEquality(self.key_value_list)
+        if self.rules.key_value_list_not is not None:
+            failure += self.checkNonEquality(self.rules.key_value_list_not)
         if self.key_list is not None:
             failure += self.checkExists(self.key_list)
         return failure
@@ -301,6 +314,8 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.key_threshold_critical)
         if self.key_value_list_critical is not None:
             failure += self.checkEquality(self.key_value_list_critical)
+        if self.rules.key_value_list_not_critical is not None:
+            failure += self.checkNonEquality(self.rules.key_value_list_not_critical)
         if self.key_list_critical is not None:
             failure += self.checkExists(self.key_list_critical)
         return failure
@@ -364,6 +379,18 @@ def parseArgs():
     parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
     parser.add_argument('-H', '--host', dest='host', required=True,
                         help='Host.')
+    parser.add_argument('-k', '--insecure', action='store_true',
+                        help='do not check server SSL certificate')
+    parser.add_argument('--cacert',
+                        required=('-s' in sys.argv or '--ssl' in sys.argv)
+                        and not ('-k' in sys.argv or '--insecure' in sys.argv),
+                        dest='cacert', help='SSL CA certificate')
+    parser.add_argument('--cert',
+                        required=('-s' in sys.argv or '--ssl' in sys.argv)
+                        and not ('-k' in sys.argv or '--insecure' in sys.argv),
+                        dest='cert', help='SSL client certificate')
+    parser.add_argument('--key', dest='key',
+                        help='SSL client key ( if not bundled into the cert )')
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
     parser.add_argument('-p', '--path', dest='path', help='Path.')
     parser.add_argument('-t', '--timeout', type=int,
@@ -413,6 +440,17 @@ def parseArgs():
                         dest='key_value_list_unknown', nargs='*',
                         help='''Same as -q but return unknown if
                         equality check fails.''')
+    parser.add_argument('-y', '--key_not_equals',
+                        dest='key_value_list_not', nargs='*',
+                        help='''Checks equality of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if equality
+                        check succeeds''')
+    parser.add_argument('-Y', '--key_not_equals_critical',
+                        dest='key_value_list_not_critical', nargs='*',
+                        help='''Same as -q but return critical if equality
+                        check succeeds.''')
     parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
                         help='''Gathers the values of these keys (key[>alias],
                         UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
@@ -442,9 +480,11 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
         debug = False
         key_threshold_warning = None
         key_value_list = None
+        key_value_list_not = None
         key_list = None
         key_threshold_critical = None
         key_value_list_critical = None
+        key_value_list_not_critical = None
         key_list_critical = None
         metric_list = None
 
@@ -466,6 +506,14 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
 
         def dash_Q(self, data):
             self.key_value_list_critical = data
+            return self
+
+        def dash_y(self, data):
+            self.key_value_list_not = data
+            return self
+
+        def dash_Y(self, data):
+            self.key_value_list_not_critical = data
             return self
 
         def dash_w(self, data):
@@ -517,6 +565,14 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
                             '{"metric": 5}', CRITICAL_CODE)
             self.check_data(RulesHelper().dash_q(['metric,5']),
                             '{"metric": 5}', OK_CODE)
+
+        def test_non_equality(self):
+            self.check_data(RulesHelper().dash_y(['metric,6']),
+                            '{"metric": 6}', WARNING_CODE)
+            self.check_data(RulesHelper().dash_Y(['metric,6']),
+                            '{"metric": 6}', CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_y(['metric,5']),
+                            '{"metric": 6}', OK_CODE)
 
         def test_warning_thresholds(self):
             self.check_data(RulesHelper().dash_w(['metric,5']),
@@ -616,6 +672,13 @@ if __name__ == "__main__":
     nagios = NagiosHelper()
     if args.ssl:
         url = "https://%s" % args.host
+        if args.insecure:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+        else:
+            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            context.verify_mode = ssl.CERT_OPTIONAL
+            context.load_verify_locations(args.cacert)
+            context.load_cert_chain(args.cert,keyfile=args.key)
     else:
         url = "http://%s" % args.host
     if args.port:
@@ -635,13 +698,14 @@ if __name__ == "__main__":
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
             response = urllib2.urlopen(req, timeout=args.timeout,
-                                       data=args.data)
+                                       data=args.data, context=context)
         elif args.timeout:
-            response = urllib2.urlopen(req, timeout=args.timeout)
+            response = urllib2.urlopen(req, timeout=args.timeout,
+                                       context=context)
         elif args.data:
-            response = urllib2.urlopen(req, data=args.data)
+            response = urllib2.urlopen(req, data=args.data, context=context)
         else:
-            response = urllib2.urlopen(req)
+            response = urllib2.urlopen(req, context=context)
     except HTTPError as e:
         nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
