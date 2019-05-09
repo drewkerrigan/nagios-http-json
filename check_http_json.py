@@ -65,8 +65,8 @@ class NagiosHelper:
     def append_unknown(self, unknown_message):
         self.unknown_message += unknown_message
 
-    def append_metrics(self, (performance_data,
-                              warning_message, critical_message)):
+    def append_metrics(self, performance_data,
+                              warning_message, critical_message):
         self.performance_data += performance_data
         self.append_warning(warning_message)
         self.append_critical(critical_message)
@@ -307,9 +307,9 @@ class JsonRuleProcessor:
 
     def checkUnknown(self):
         unknown = ''
-    	if self.rules.key_value_list_unknown != None:
+        if self.rules.key_value_list_unknown is not None:
             unknown += self.checkEquality(self.rules.key_value_list_unknown)
-	return unknown
+        return unknown
 
     def checkMetrics(self):
         """Return a Nagios specific performance metrics string given keys
@@ -432,7 +432,7 @@ def debugPrint(debug_flag, message, pretty_flag=False):
         if pretty_flag:
             pprint(message)
         else:
-            print message
+            print(message)
 
 if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
     import unittest
@@ -658,5 +658,5 @@ if __name__ == "__main__":
         nagios.append_metrics(processor.checkMetrics())
         nagios.append_unknown(processor.checkUnknown())
     # Print Nagios specific string and exit appropriately
-    print nagios.getMessage()
+    print(nagios.getMessage())
     exit(nagios.getCode())
