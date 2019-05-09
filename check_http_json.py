@@ -1,5 +1,6 @@
 #!/usr/bin/python2.7
 
+plugin_description = \
 """
 Check HTTP JSON Nagios Plugin
 
@@ -23,6 +24,8 @@ WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
 
+__version__ = '1.4.0'
+__version_date__ = '2019-05-09'
 
 class NagiosHelper:
     """Help with Nagios specific status string formatting."""
@@ -378,17 +381,22 @@ class JsonRuleProcessor:
 
 
 def parseArgs():
-    parser = argparse.ArgumentParser(description='''Nagios plugin which
-    checks json values from a given endpoint against argument specified rules
-    and determines the status and performance data for that service''')
+    parser = argparse.ArgumentParser(
+    description = plugin_description + '\n\nVersion: %s (%s)'
+    %(__version__, __version_date__),
+    formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument('-d', '--debug', action='store_true',
-                        help='Debug mode.')
-    parser.add_argument('-s', '--ssl', action='store_true', help='HTTPS mode.')
-    parser.add_argument('-H', '--host', dest='host', required=True,
-                        help='Host.')
+                        help='debug mode')
+    parser.add_argument('-s', '--ssl', action='store_true',
+                        help='use TLS to connect to remote host')
+    parser.add_argument('-H', '--host', dest='host',
+                        required=not ('-V' in sys.argv or '--version' in sys.argv),
+                        help='remote host to query')
     parser.add_argument('-k', '--insecure', action='store_true',
                         help='do not check server SSL certificate')
+    parser.add_argument('-V', '--version', action='store_true',
+                        help='print version of this plugin')
     parser.add_argument('--cacert',
                         dest='cacert', help='SSL CA certificate')
     parser.add_argument('--cert',
@@ -396,7 +404,7 @@ def parseArgs():
     parser.add_argument('--key', dest='key',
                         help='SSL client key ( if not bundled into the cert )')
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
-    parser.add_argument('-p', '--path', dest='path', help='Path.')
+    parser.add_argument('-p', '--path', dest='path', help='Path')
     parser.add_argument('-t', '--timeout', type=int,
                         help='Connection timeout (seconds)')
     parser.add_argument('-B', '--basic-auth', dest='auth',
@@ -674,6 +682,10 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
 if __name__ == "__main__":
     args = parseArgs()
     nagios = NagiosHelper()
+    if args.version:
+        print('Version: %s - Date: %s' % (__version__, __version_date__))
+        exit(0)
+
     if args.ssl:
         url = "https://%s" % args.host
 
