@@ -240,8 +240,9 @@ class JsonRuleProcessor:
         for kv in equality_list:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
-            if (self.helper.equals(key, v) is False):
-                failure += " Value for key %s did not match %s." % (alias, v)
+            if (self.helper.equals(key, v) == False):
+                failure += " Key %s mismatch. %s != %s" % (alias, v,
+                           self.helper.get(key))
         return failure
 
     def checkNonEquality(self, equality_list):
@@ -250,7 +251,8 @@ class JsonRuleProcessor:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
             if (self.helper.equals(key, v) == True):
-                failure += " Value for key %s matches %s." % (alias, v)
+                failure += " Key %s match found. %s == %s" % (alias, v,
+                           self.helper.get(key))
         return failure
 
     def checkThreshold(self, key, alias, r):
