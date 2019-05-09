@@ -69,8 +69,8 @@ class NagiosHelper:
     def append_unknown(self, unknown_message):
         self.unknown_message += unknown_message
 
-    def append_metrics(self, performance_data,
-                              warning_message, critical_message):
+    def append_metrics(self, (performance_data,
+                              warning_message, critical_message)):
         self.performance_data += performance_data
         self.append_warning(warning_message)
         self.append_critical(critical_message)
@@ -689,7 +689,7 @@ if __name__ == "__main__":
     if args.ssl:
         url = "https://%s" % args.host
 
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
         context.options |= ssl.OP_NO_SSLv2
         context.options |= ssl.OP_NO_SSLv3
 
@@ -729,6 +729,7 @@ if __name__ == "__main__":
     if args.path:
         url += "/%s" % args.path
     debugPrint(args.debug, "url:%s" % url)
+    json_data = ''
     try:
         req = urllib2.Request(url)
         req.add_header("User-Agent", "check_http_json")
@@ -750,13 +751,16 @@ if __name__ == "__main__":
             response = urllib2.urlopen(req, data=args.data, context=context)
         else:
             response = urllib2.urlopen(req, context=context)
+
+	json_data = response.read()
+
     except HTTPError as e:
         nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
         nagios.append_critical(" URLError[%s], url:%s" % (str(e.reason), url))
 
     try:
-        data = json.loads(response.read())
+        data = json.loads(json_data)
     except ValueError as e:
         nagios.append_unknown(" Parser error: %s" % str(e))
 
