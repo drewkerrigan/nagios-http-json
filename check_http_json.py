@@ -390,12 +390,8 @@ def parseArgs():
     parser.add_argument('-k', '--insecure', action='store_true',
                         help='do not check server SSL certificate')
     parser.add_argument('--cacert',
-                        required=('-s' in sys.argv or '--ssl' in sys.argv)
-                        and not ('-k' in sys.argv or '--insecure' in sys.argv),
                         dest='cacert', help='SSL CA certificate')
     parser.add_argument('--cert',
-                        required=('-s' in sys.argv or '--ssl' in sys.argv)
-                        and not ('-k' in sys.argv or '--insecure' in sys.argv),
                         dest='cert', help='SSL client certificate')
     parser.add_argument('--key', dest='key',
                         help='SSL client key ( if not bundled into the cert )')
@@ -680,13 +676,40 @@ if __name__ == "__main__":
     nagios = NagiosHelper()
     if args.ssl:
         url = "https://%s" % args.host
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_SSLv2
+        context.options |= ssl.OP_NO_SSLv3
+
         if args.insecure:
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
+            context.verify_mode = ssl.CERT_NONE
         else:
-            context = ssl.SSLContext(ssl.PROTOCOL_TLSv1_2)
             context.verify_mode = ssl.CERT_OPTIONAL
-            context.load_verify_locations(args.cacert)
-            context.load_cert_chain(args.cert,keyfile=args.key)
+            if args.cacert:
+                try:
+                    context.load_verify_locations(args.cacert)
+                except ssl.SSLError:
+                    nagios.append_unknown(
+                    ''' Error loading SSL CA cert "%s"!'''
+                    % args.cacert)
+
+            if args.cert:
+                try:
+                    context.load_cert_chain(args.cert,keyfile=args.key)
+                except ssl.SSLError:
+                    if args.key:
+                        nagios.append_unknown(
+                        ''' Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'''
+                        % (args.key, args.cert))
+                    else:
+                        nagios.append_unknown(
+                        ''' Error loading SSL cert. Make sure "%s" contains the key as well!'''
+                        % (args.cert))
+
+        if nagios.getCode() != OK_CODE:
+            print(nagios.getMessage())
+            exit(nagios.getCode())
+
     else:
         url = "http://%s" % args.host
     if args.port:
