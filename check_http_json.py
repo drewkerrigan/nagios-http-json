@@ -731,6 +731,7 @@ if __name__ == "__main__":
     debugPrint(args.debug, "url:%s" % url)
     try:
         req = urllib2.Request(url)
+        req.add_header("User-Agent", "check_http_json")
         if args.auth:
             base64str = base64.encodestring(args.auth).replace('\n', '')
             req.add_header('Authorization', 'Basic %s' % base64str)
