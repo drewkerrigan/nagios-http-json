@@ -206,10 +206,16 @@ class JsonRuleProcessor:
         self.key_threshold_critical = self.expandKeys(
             self.rules.key_threshold_critical)
         self.key_value_list = self.expandKeys(self.rules.key_value_list)
+        self.key_value_list_not = self.expandKeys(
+            self.rules.key_value_list_not)
         self.key_list = self.expandKeys(self.rules.key_list)
         self.key_value_list_critical = self.expandKeys(
             self.rules.key_value_list_critical)
+        self.key_value_list_not_critical = self.expandKeys(
+            self.rules.key_value_list_not_critical)
         self.key_list_critical = self.expandKeys(self.rules.key_list_critical)
+        self.key_value_list_unknown = self.expandKeys(
+            self.rules.key_value_list_unknown)
 
     def expandKeys(self, src):
         if src is None:
@@ -302,8 +308,8 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.key_threshold_warning)
         if self.key_value_list is not None:
             failure += self.checkEquality(self.key_value_list)
-        if self.rules.key_value_list_not is not None:
-            failure += self.checkNonEquality(self.rules.key_value_list_not)
+        if self.key_value_list_not is not None:
+            failure += self.checkNonEquality(self.key_value_list_not)
         if self.key_list is not None:
             failure += self.checkExists(self.key_list)
         return failure
@@ -314,16 +320,16 @@ class JsonRuleProcessor:
             failure += self.checkThresholds(self.key_threshold_critical)
         if self.key_value_list_critical is not None:
             failure += self.checkEquality(self.key_value_list_critical)
-        if self.rules.key_value_list_not_critical is not None:
-            failure += self.checkNonEquality(self.rules.key_value_list_not_critical)
+        if self.key_value_list_not_critical is not None:
+            failure += self.checkNonEquality(self.key_value_list_not_critical)
         if self.key_list_critical is not None:
             failure += self.checkExists(self.key_list_critical)
         return failure
 
     def checkUnknown(self):
         unknown = ''
-        if self.rules.key_value_list_unknown is not None:
-            unknown += self.checkEquality(self.rules.key_value_list_unknown)
+        if self.key_value_list_unknown is not None:
+            unknown += self.checkEquality(self.key_value_list_unknown)
         return unknown
 
     def checkMetrics(self):
@@ -402,7 +408,7 @@ def parseArgs():
     parser.add_argument('-A', '--headers', dest='headers',
                         help='The http headers in JSON format.')
     parser.add_argument('-f', '--field_separator', dest='separator',
-                        help='''JSON Field separator, defaults to "." ;
+                        help='''JSON Field separator, defaults to ".";
                         Select element in an array with "(" ")"''')
     parser.add_argument('-w', '--warning', dest='key_threshold_warning',
                         nargs='*',
