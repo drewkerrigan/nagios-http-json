@@ -738,12 +738,16 @@ if __name__ == "__main__":
         else:
             response = urllib2.urlopen(req, context=context)
     except HTTPError as e:
-        nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
+        nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
-        nagios.append_critical("URLError[%s], url:%s" % (str(e.reason), url))
+        nagios.append_critical(" URLError[%s], url:%s" % (str(e.reason), url))
+
+    try:
+        data = json.loads(response.read())
+    except ValueError as e:
+        nagios.append_unknown(" Parser error: %s" % str(e))
+
     else:
-        jsondata = response.read()
-        data = json.loads(jsondata)
         debugPrint(args.debug, 'json:')
         debugPrint(args.debug, data, True)
         # Apply rules to returned JSON data
@@ -752,6 +756,9 @@ if __name__ == "__main__":
         nagios.append_critical(processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
         nagios.append_unknown(processor.checkUnknown())
+
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
     exit(nagios.getCode())
+
+#EOF
