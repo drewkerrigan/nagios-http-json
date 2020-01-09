@@ -22,6 +22,7 @@ OK_CODE = 0
 WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
+value_tested = 0
 
 class NagiosHelper:
     """Help with Nagios specific status string formatting."""
@@ -424,7 +425,26 @@ if __name__ == "__main__":
         else:
             response = urllib2.urlopen(req)
     except HTTPError as e:
-        nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
+	if e.code >= 500:
+        	jsondata = e.read()
+        	data = json.loads(jsondata)
+        	debugPrint(args.debug, 'json:')
+        	debugPrint(args.debug, data, True)
+        	# Apply rules to returned JSON data
+        	processor = JsonRuleProcessor(data, args)
+        	nagios.append_warning(processor.checkWarning())
+        	nagios.append_critical(processor.checkCritical())
+        	nagios.append_metrics(processor.checkMetrics())
+		# If JSON test passed: 
+		LstRules = (processor.rules.key_threshold_warning, processor.rules.key_value_list, processor.rules.key_list, processor.rules.key_threshold_critical, processor.rules.key_value_list_critical, processor.rules.key_list_critical, processor.rules.metric_list)
+		is_tested = 0
+		for i in LstRules:
+		   if i:
+		      is_tested = 1
+		if is_tested == 0:
+		   nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
+	else:
+        	nagios.append_unknown("HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
         nagios.append_critical("URLError[%s], url:%s" % (str(e.reason), url))
     else:
