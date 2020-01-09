@@ -22,7 +22,6 @@ OK_CODE = 0
 WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
-value_tested = 0
 
 class NagiosHelper:
     """Help with Nagios specific status string formatting."""
