@@ -497,6 +497,7 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
         key_threshold_critical = None
         key_value_list_critical = None
         key_value_list_not_critical = None
+        key_value_list_unknown = None
         key_list_critical = None
         metric_list = None
 
