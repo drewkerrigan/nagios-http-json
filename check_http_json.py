@@ -683,6 +683,8 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
 if __name__ == "__main__":
     args = parseArgs()
     nagios = NagiosHelper()
+    context = None
+
     if args.version:
         print('Version: %s - Date: %s' % (__version__, __version_date__))
         exit(0)
