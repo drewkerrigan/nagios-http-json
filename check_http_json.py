@@ -755,7 +755,7 @@ if __name__ == "__main__":
         else:
             response = urllib2.urlopen(req, context=context)
 
-	json_data = response.read()
+        json_data = response.read()
 
     except HTTPError as e:
         nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
