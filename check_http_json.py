@@ -683,6 +683,8 @@ if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
 if __name__ == "__main__":
     args = parseArgs()
     nagios = NagiosHelper()
+    context = None
+
     if args.version:
         print('Version: %s - Date: %s' % (__version__, __version_date__))
         exit(0)
@@ -753,7 +755,7 @@ if __name__ == "__main__":
         else:
             response = urllib2.urlopen(req, context=context)
 
-	json_data = response.read()
+        json_data = response.read()
 
     except HTTPError as e:
         nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
