@@ -191,7 +191,7 @@ More info about Nagios Range format and Units of Measure can be found at [https:
 
 ### Requirements
 
-* Python 2.7
+* Python 3
 
 ### Configuration
 
