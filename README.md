@@ -15,7 +15,8 @@ This is a generic plugin for Nagios which checks json values from a given HTTP e
 Executing `./check_http_json.py -h` will yield the following details:
 
 ```
-usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
+usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
+                          [--cert CERT] [--key KEY] [-P PORT] [-p PATH]
                           [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
                           [-f SEPARATOR]
                           [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
@@ -24,19 +25,31 @@ usage: check_http_json.py [-h] [-d] [-s] -H HOST [-P PORT] [-p PATH]
                           [-E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]]
                           [-q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]]
                           [-Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]]
+                          [-u [KEY_VALUE_LIST_UNKNOWN [KEY_VALUE_LIST_UNKNOWN ...]]]
+                          [-y [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]]]
+                          [-Y [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]]
 
-Nagios plugin which checks json values from a given endpoint against argument
-specified rules and determines the status and performance data for that
-service
+Check HTTP JSON Nagios Plugin
+
+Generic Nagios plugin which checks json values from a given endpoint against
+argument specified rules and determines the status and performance data for
+that service.
+
+Version: 1.4.0 (2019-05-09)
 
 optional arguments:
   -h, --help            show this help message and exit
-  -d, --debug           Debug mode.
-  -s, --ssl             HTTPS mode.
-  -H HOST, --host HOST  Host.
+  -d, --debug           debug mode
+  -s, --ssl             use TLS to connect to remote host
+  -H HOST, --host HOST  remote host to query
+  -k, --insecure        do not check server SSL certificate
+  -V, --version         print version of this plugin
+  --cacert CACERT       SSL CA certificate
+  --cert CERT           SSL client certificate
+  --key KEY             SSL client key ( if not bundled into the cert )
   -P PORT, --port PORT  TCP port
-  -p PATH, --path PATH  Path.
+  -p PATH, --path PATH  Path
   -t TIMEOUT, --timeout TIMEOUT
                         Connection timeout (seconds)
   -B AUTH, --basic-auth AUTH
@@ -45,7 +58,7 @@ optional arguments:
   -A HEADERS, --headers HEADERS
                         The http headers in JSON format.
   -f SEPARATOR, --field_separator SEPARATOR
-                        Json Field separator, defaults to "." ; Select element
+                        JSON Field separator, defaults to "."; Select element
                         in an array with "(" ")"
   -w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]], --warning [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]
                         Warning threshold for these values
@@ -72,15 +85,26 @@ optional arguments:
   -Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]], --key_equals_critical [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]
                         Same as -q but return critical if equality check
                         fails.
+  -u [KEY_VALUE_LIST_UNKNOWN [KEY_VALUE_LIST_UNKNOWN ...]], --key_equals_unknown [KEY_VALUE_LIST_UNKNOWN [KEY_VALUE_LIST_UNKNOWN ...]]
+                        Same as -q but return unknown if equality check fails.
+  -y [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]], --key_not_equals [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]]
+                        Checks equality of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if equality check
+                        succeeds
+  -Y [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]], --key_not_equals_critical [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]]
+                        Same as -q but return critical if equality check
+                        succeeds.
   -m [METRIC_LIST [METRIC_LIST ...]], --key_metric [METRIC_LIST [METRIC_LIST ...]]
-                        Gathers the values of these keys (key[>alias],UnitOfMe
-                        asure,WarnRange,CriticalRange,Min,Max) for Nagios
-                        performance data. More information about Range format
-                        and units of measure for nagios can be found at
+                        Gathers the values of these keys (key[>alias],
+                        UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
+                        Nagios performance data. More information about Range
+                        format and units of measure for nagios can be found at
                         nagios-plugins.org/doc/guidelines.html Additional
                         formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure),
-                        (key[>alias],UnitOfMeasure,WarnRange,CriticalRange).
+                        (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
 ```
 
 ## Examples
@@ -142,7 +166,7 @@ optional arguments:
 * **Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
 * **Critical:** `./check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"`
 * **Metrics with Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
-* **Metris with Critical:**
+* **Metrics with Critical:**
 
         ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
         ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
@@ -159,7 +183,7 @@ optional arguments:
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
 
-#### Using Headers 
+#### Using Headers
 
 * `./check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"`
 
@@ -167,7 +191,7 @@ More info about Nagios Range format and Units of Measure can be found at [https:
 
 ### Requirements
 
-* Python
+* Python 2.7
 
 ### Configuration
 
