@@ -133,6 +133,21 @@ optional arguments:
         }
     ]
 
+**Data for keys of all items in a list** `(*).capacity.value`:
+
+    [
+        {
+            "capacity": {
+                "value": 1000
+            }
+        },
+        {
+            "capacity": {
+                "value": 2200
+            }
+        }
+    ]
+
 **Data for separator** `-f _` **and key** `(0)_gauges_jvm.buffers.direct.capacity_value`:
 
     [
