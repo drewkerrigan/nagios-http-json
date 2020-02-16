@@ -1,4 +1,4 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python3
 
 plugin_description = \
 """
@@ -9,15 +9,15 @@ argument specified rules and determines the status and performance data for
 that service.
 """
 
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 import base64
 import json
 import argparse
 import sys
 import ssl
 from pprint import pprint
-from urllib2 import HTTPError
-from urllib2 import URLError
+from urllib.error import HTTPError
+from urllib.error import URLError
 
 OK_CODE = 0
 WARNING_CODE = 1
@@ -69,8 +69,8 @@ class NagiosHelper:
     def append_unknown(self, unknown_message):
         self.unknown_message += unknown_message
 
-    def append_metrics(self, (performance_data,
-                              warning_message, critical_message)):
+    def append_metrics(self, metrics):
+        (performance_data, warning_message, critical_message) = metrics
         self.performance_data += performance_data
         self.append_warning(warning_message)
         self.append_critical(critical_message)
@@ -734,7 +734,7 @@ if __name__ == "__main__":
     debugPrint(args.debug, "url:%s" % url)
     json_data = ''
     try:
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_header("User-Agent", "check_http_json")
         if args.auth:
             base64str = base64.encodestring(args.auth).replace('\n', '')
@@ -745,15 +745,15 @@ if __name__ == "__main__":
             for header in headers:
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
-            response = urllib2.urlopen(req, timeout=args.timeout,
+            response = urllib.request.urlopen(req, timeout=args.timeout,
                                        data=args.data, context=context)
         elif args.timeout:
-            response = urllib2.urlopen(req, timeout=args.timeout,
+            response = urllib.request.urlopen(req, timeout=args.timeout,
                                        context=context)
         elif args.data:
-            response = urllib2.urlopen(req, data=args.data, context=context)
+            response = urllib.request.urlopen(req, data=args.data, context=context)
         else:
-            response = urllib2.urlopen(req, context=context)
+            response = urllib.request.urlopen(req, context=context)
 
         json_data = response.read()
 
