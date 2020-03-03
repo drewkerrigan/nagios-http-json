@@ -28,7 +28,10 @@ __version__ = '2.0.0'
 __version_date__ = '2022-02-16'
 
 class NagiosHelper:
-    """Help with Nagios specific status string formatting."""
+    """
+    Help with Nagios specific status string formatting.
+    """
+
     message_prefixes = {OK_CODE: 'OK',
                         WARNING_CODE: 'WARNING',
                         CRITICAL_CODE: 'CRITICAL',
@@ -39,8 +42,11 @@ class NagiosHelper:
     unknown_message = ''
 
     def getMessage(self):
-        """Build a status-prefixed message with optional performance data
-        generated externally"""
+        """
+        Build a status-prefixed message with optional performance data
+        generated externally
+        """
+
         text = "%s: Status %s." % (self.message_prefixes[self.getCode()],
                                    self.message_prefixes[self.getCode()])
         text += self.warning_message
@@ -77,8 +83,11 @@ class NagiosHelper:
 
 
 class JsonHelper:
-    """Perform simple comparison operations against values in a given
-    JSON dict"""
+    """
+    Perform simple comparison operations against values in a given
+    JSON dict
+    """
+
     def __init__(self, json_data, separator):
         self.data = json_data
         self.separator = separator
@@ -132,8 +141,11 @@ class JsonHelper:
         return (self.get(key) != (None, 'not_found'))
 
     def get(self, key, temp_data=''):
-        """Can navigate nested json keys with a dot format
-        (Element.Key.NestedKey). Returns (None, 'not_found') if not found"""
+        """
+        Can navigate nested json keys with a dot format
+        (Element.Key.NestedKey). Returns (None, 'not_found') if not found
+        """
+
         if temp_data:
             data = temp_data
         else:
@@ -192,8 +204,11 @@ def _getKeyAlias(original_key):
 
 
 class JsonRuleProcessor:
-    """Perform checks and gather values from a JSON dict given rules
-    and metrics definitions"""
+    """
+    Perform checks and gather values from a JSON dict given rules
+    and metrics definitions
+    """
+
     def __init__(self, json_data, rules_args):
         self.data = json_data
         self.rules = rules_args
@@ -338,8 +353,11 @@ class JsonRuleProcessor:
         return unknown
 
     def checkMetrics(self):
-        """Return a Nagios specific performance metrics string given keys
-        and parameter definitions"""
+        """
+        Return a Nagios specific performance metrics string given keys
+        and parameter definitions
+        """
+
         metrics = ''
         warning = ''
         critical = ''
@@ -381,10 +399,15 @@ class JsonRuleProcessor:
 
 
 def parseArgs():
+    """
+    CLI argument definitions and parsing
+    """
+
     parser = argparse.ArgumentParser(
-    description = plugin_description + '\n\nVersion: %s (%s)'
-    %(__version__, __version_date__),
-    formatter_class=argparse.RawDescriptionHelpFormatter)
+        description = plugin_description + '\n\nVersion: %s (%s)'
+        %(__version__, __version_date__),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug mode')
@@ -478,6 +501,10 @@ def parseArgs():
 
 
 def debugPrint(debug_flag, message, pretty_flag=False):
+    """
+    Print debug messages if -d (debug_flat ) is set.
+    """
+
     if debug_flag:
         if pretty_flag:
             pprint(message)
@@ -537,8 +564,10 @@ if __name__ == "__main__":
         url += ":%s" % args.port
     if args.path:
         url += "/%s" % args.path
+
     debugPrint(args.debug, "url:%s" % url)
     json_data = ''
+
     try:
         req = urllib.request.Request(url)
         req.add_header("User-Agent", "check_http_json")
