@@ -398,7 +398,7 @@ class JsonRuleProcessor:
         return ("%s" % metrics, warning, critical)
 
 
-def parseArgs():
+def parseArgs(args):
     """
     CLI argument definitions and parsing
     """
@@ -497,7 +497,7 @@ def parseArgs():
                         (key[>alias],UnitOfMeasure,WarnRange,
                         CriticalRange).''')
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def debugPrint(debug_flag, message, pretty_flag=False):
@@ -514,7 +514,8 @@ def debugPrint(debug_flag, message, pretty_flag=False):
 
 """Program entry point"""
 if __name__ == "__main__":
-    args = parseArgs()
+
+    args = parseArgs(sys.argv[1:])
     nagios = NagiosHelper()
     context = None
 
