@@ -59,6 +59,10 @@ class RulesHelper:
         self.key_value_list_not_critical = data
         return self
 
+    def dash_U(self, data):
+        self.key_value_list_unknown = data
+        return self
+
     def dash_w(self, data):
         self.key_threshold_warning = data
         return self
@@ -82,6 +86,7 @@ class UtilTest(unittest.TestCase):
         nagios.append_warning(processor.checkWarning())
         nagios.append_critical(processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
+        nagios.append_unknown(processor.checkUnknown())
         self.assertEqual(code, nagios.getCode())
 
     def test_metrics(self):
@@ -97,6 +102,10 @@ class UtilTest(unittest.TestCase):
                         '{"metric": 5}', OK_CODE)
         self.check_data(RulesHelper().dash_m(['(*).value,s,1:5,1:5']),
                         '[{"value": 5},{"value": 100}]', CRITICAL_CODE)
+
+    def test_unknown(self):
+        self.check_data(RulesHelper().dash_U(['metric,0']),
+                        '{"metric": 3}', UNKNOWN_CODE)
 
     def test_exists(self):
         self.check_data(RulesHelper().dash_e(['nothere']),
