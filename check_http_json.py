@@ -108,12 +108,15 @@ class JsonHelper:
         index = int(key[key.find(self.arrayOpener) +
                         1:key.find(self.arrayCloser)])
         remainingKey = key[key.find(self.arrayCloser + self.separator) + 2:]
+
         if key.find(self.arrayCloser + self.separator) == -1:
             remainingKey = key[key.find(self.arrayCloser) + 1:]
         if subElemKey in data:
             if index < len(data[subElemKey]):
                 return self.get(remainingKey, data[subElemKey][index])
             else:
+                return (None, 'not_found')
+        if index >= len(data):
                 return (None, 'not_found')
         else:
             if not subElemKey:

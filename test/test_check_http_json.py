@@ -220,3 +220,26 @@ class UtilTest(unittest.TestCase):
             { "gauges": { "jvm.buffers.direct.capacity": [
             {"value": 215415},{"value": 1235}]}}]''',
             WARNING_CODE)
+
+    def test_array_with_missing_element(self):
+        """
+        See https://github.com/drewkerrigan/nagios-http-json/issues/34
+        """
+        rules = RulesHelper()
+
+        # This should simply work
+        data = '[{"Node": "there"}]'
+        self.check_data(rules.dash_q(['(0).Node,there']), data, OK_CODE)
+
+        # This should warn us
+        data = '[{"Node": "othervalue"}]'
+        self.check_data(rules.dash_q(['(0).Node,there']), data, WARNING_CODE)
+
+        # # This should not throw an IndexError
+        data = '[{"Node": "foobar"}]'
+        self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing']), data, WARNING_CODE)
+        self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing', '(2).Node,alsomissing']), data, WARNING_CODE)
+
+        # This should not throw a KeyError
+        data = '{}'
+        self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing']), data, WARNING_CODE)
