@@ -27,3 +27,8 @@ class ArgsTest(unittest.TestCase):
     def test_parser_with_port(self):
         parser = parseArgs(['-H', 'foobar', '-P', '8888'])
         self.assertEqual(parser.port, '8888')
+
+    def test_parser_with_separator(self):
+        parser = parseArgs(['-H', 'foobar', '-f', '_', '-F', '_'])
+        self.assertEqual(parser.separator, '_')
+        self.assertEqual(parser.value_separator, '_')

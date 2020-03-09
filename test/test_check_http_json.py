@@ -19,6 +19,7 @@ UNKNOWN_CODE = 3
 
 class RulesHelper:
     separator = '.'
+    value_separator = ':'
     debug = False
     key_threshold_warning = None
     key_value_list = None
@@ -122,6 +123,17 @@ class UtilTest(unittest.TestCase):
                         '{"metric": 5}', CRITICAL_CODE)
         self.check_data(RulesHelper().dash_q(['metric,5']),
                         '{"metric": 5}', OK_CODE)
+
+    def test_equality_colon(self):
+        """
+        See https://github.com/drewkerrigan/nagios-http-json/issues/43
+        """
+        rules = RulesHelper()
+        rules.value_separator = '_'
+
+        # This should not fail
+        self.check_data(rules.dash_q(['metric,foo:bar']),
+                        '{"metric": "foo:bar"}', OK_CODE)
 
     def test_non_equality(self):
         self.check_data(RulesHelper().dash_y(['metric,6']),

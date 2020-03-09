@@ -88,9 +88,10 @@ class JsonHelper:
     JSON dict
     """
 
-    def __init__(self, json_data, separator):
+    def __init__(self, json_data, separator, value_separator):
         self.data = json_data
         self.separator = separator
+        self.value_separator = value_separator
         self.arrayOpener = '('
         self.arrayCloser = ')'
 
@@ -126,7 +127,7 @@ class JsonHelper:
 
     def equals(self, key, value):
         return self.exists(key) and \
-            str(self.get(key)) in value.split(':')
+            str(self.get(key)) in value.split(self.value_separator)
 
     def lte(self, key, value):
         return self.exists(key) and float(self.get(key)) <= float(value)
@@ -216,11 +217,15 @@ class JsonRuleProcessor:
         self.data = json_data
         self.rules = rules_args
         separator = '.'
+        value_separator = ':'
         if self.rules.separator:
             separator = self.rules.separator
-        self.helper = JsonHelper(self.data, separator)
+        if self.rules.value_separator:
+            value_separator = self.rules.value_separator
+        self.helper = JsonHelper(self.data, separator, value_separator)
         debugPrint(rules_args.debug, "rules:%s" % rules_args)
         debugPrint(rules_args.debug, "separator:%s" % separator)
+        debugPrint(rules_args.debug, "value_separator:%s" % value_separator)
         self.metric_list = self.expandKeys(self.rules.metric_list)
         self.key_threshold_warning = self.expandKeys(
             self.rules.key_threshold_warning)
@@ -442,6 +447,8 @@ def parseArgs(args):
     parser.add_argument('-f', '--field_separator', dest='separator',
                         help='''JSON Field separator, defaults to ".";
                         Select element in an array with "(" ")"''')
+    parser.add_argument('-F', '--value_separator', dest='value_separator',
+                        help='''JSON Value separator, defaults to ":"''')
     parser.add_argument('-w', '--warning', dest='key_threshold_warning',
                         nargs='*',
                         help='''Warning threshold for these values
