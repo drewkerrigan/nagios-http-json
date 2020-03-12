@@ -183,10 +183,10 @@ class JsonHelper:
             subElemKey = key[:key.find('(*)')-1]
         remainingKey = key[key.find('(*)')+3:]
         elemData = self.get(subElemKey)
-        if elemData is (None, 'not_found'):
+        if elemData == (None, 'not_found'):
             keys.append(key)
             return keys
-        if subElemKey is not '':
+        if subElemKey != '':
             subElemKey = subElemKey + '.'
         for i in range(len(elemData)):
             newKey = subElemKey + '(' + str(i) + ')' + remainingKey
