@@ -255,3 +255,20 @@ class UtilTest(unittest.TestCase):
         # This should not throw a KeyError
         data = '{}'
         self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing']), data, WARNING_CODE)
+
+    def test_subelem(self):
+
+        rules = RulesHelper()
+        data = '{"foo": {"foo": {"foo": "bar"}}}'
+
+        self.check_data(rules.dash_E(['foo.foo.foo.foo.foo']), data, CRITICAL_CODE)
+
+    def test_subarrayelem_missing_elem(self):
+
+        rules = RulesHelper()
+        data = '[{"capacity": {"value": 1000}},{"capacity": {"value": 2200}}]'
+
+        self.check_data(rules.dash_E(['(*).capacity.value']), data, OK_CODE)
+        self.check_data(rules.dash_E(['(*).capacity.value.too_deep']), data, CRITICAL_CODE)
+        # Should not throw keyerror
+        self.check_data(rules.dash_E(['foo']), data, CRITICAL_CODE)

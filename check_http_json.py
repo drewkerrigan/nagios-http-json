@@ -169,7 +169,7 @@ class JsonHelper:
                 if key.find(self.arrayOpener) != -1:
                     return self.getSubArrayElement(key, data)
                 else:
-                    if key in data:
+                    if type(data) == dict and key in data:
                         return data[key]
                     else:
                         return (None, 'not_found')
