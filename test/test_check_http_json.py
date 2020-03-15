@@ -103,6 +103,8 @@ class UtilTest(unittest.TestCase):
                         '{"metric": 5}', OK_CODE)
         self.check_data(RulesHelper().dash_m(['(*).value,s,1:5,1:5']),
                         '[{"value": 5},{"value": 100}]', CRITICAL_CODE)
+        self.check_data(RulesHelper().dash_m(['metric>foobar,,1:4,1:5']),
+                        '{"metric": 5}', WARNING_CODE)
 
     def test_unknown(self):
         self.check_data(RulesHelper().dash_U(['metric,0']),
