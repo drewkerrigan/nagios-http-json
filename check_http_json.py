@@ -41,20 +41,23 @@ class NagiosHelper:
     critical_message = ''
     unknown_message = ''
 
-    def getMessage(self):
+    def getMessage(self, message=''):
         """
         Build a status-prefixed message with optional performance data
         generated externally
         """
 
-        text = "%s: Status %s." % (self.message_prefixes[self.getCode()],
-                                   self.message_prefixes[self.getCode()])
-        text += self.warning_message
-        text += self.critical_message
-        text += self.unknown_message
+        message += self.warning_message
+        message += self.critical_message
+        message += self.unknown_message
+        code = self.message_prefixes[self.getCode()]
+        output = "{code}: Status {code}. {message}".format(code=code, message=message.strip())
         if self.performance_data:
-            text += "|%s" % self.performance_data
-        return text
+            output = "{code}: {perf_data} Status {code}. {message}|{perf_data}".format(
+                code=code,
+                message=message.strip(),
+                perf_data=self.performance_data)
+        return output.strip()
 
     def getCode(self):
         code = OK_CODE

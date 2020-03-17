@@ -48,4 +48,4 @@ class NagiosHelperTest(unittest.TestCase):
 
         helper = NagiosHelper()
         helper.performance_data = 'foobar'
-        self.assertEqual('OK: Status OK.|foobar', helper.getMessage())
+        self.assertEqual('OK: foobar Status OK. |foobar', helper.getMessage())
