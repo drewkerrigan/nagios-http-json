@@ -585,8 +585,8 @@ if __name__ == "__main__":
         req = urllib.request.Request(url)
         req.add_header("User-Agent", "check_http_json")
         if args.auth:
-            # TODO: replace deprecated encodestring
-            base64str = base64.encodestring(args.auth).replace('\n', '')
+            authbytes = str(args.auth).encode()
+            base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
             req.add_header('Authorization', 'Basic %s' % base64str)
         if args.headers:
             headers = json.loads(args.headers)
