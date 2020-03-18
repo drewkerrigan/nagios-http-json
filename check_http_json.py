@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
 
-plugin_description = \
-"""
-Check HTTP JSON Nagios Plugin
-
-Generic Nagios plugin which checks json values from a given endpoint against
-argument specified rules and determines the status and performance data for
-that service.
-"""
-
 import urllib.request, urllib.error, urllib.parse
 import base64
 import json
@@ -19,13 +10,22 @@ from pprint import pprint
 from urllib.error import HTTPError
 from urllib.error import URLError
 
+plugin_description = \
+"""
+Check HTTP JSON Nagios Plugin
+
+Generic Nagios plugin which checks json values from a given endpoint against
+argument specified rules and determines the status and performance data for
+that service.
+"""
+
 OK_CODE = 0
 WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
 
 __version__ = '2.0.0'
-__version_date__ = '2022-02-16'
+__version_date__ = '2020-03-22'
 
 class NagiosHelper:
     """
@@ -104,8 +104,7 @@ class JsonHelper:
         remainingKey = key[separatorIndex + 1:]
         if partialKey in data:
             return self.get(remainingKey, data[partialKey])
-        else:
-            return (None, 'not_found')
+        return (None, 'not_found')
 
     def getSubArrayElement(self, key, data):
         subElemKey = key[:key.find(self.arrayOpener)]
@@ -121,7 +120,7 @@ class JsonHelper:
             else:
                 return (None, 'not_found')
         if index >= len(data):
-                return (None, 'not_found')
+            return (None, 'not_found')
         else:
             if not subElemKey:
                 return self.get(remainingKey, data[index])
@@ -172,7 +171,7 @@ class JsonHelper:
                 if key.find(self.arrayOpener) != -1:
                     return self.getSubArrayElement(key, data)
                 else:
-                    if type(data) == dict and key in data:
+                    if isinstance(data, dict) and key in data:
                         return data[key]
                     else:
                         return (None, 'not_found')
@@ -248,7 +247,7 @@ class JsonRuleProcessor:
 
     def expandKeys(self, src):
         if src is None:
-            return
+            return []
         dest = []
         for key in src:
             newKeys = self.helper.expandKey(key, [])
@@ -269,9 +268,9 @@ class JsonRuleProcessor:
         for kv in equality_list:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
-            if (self.helper.equals(key, v) == False):
+            if not self.helper.equals(key, v):
                 failure += " Key %s mismatch. %s != %s" % (alias, v,
-                           self.helper.get(key))
+                                                           self.helper.get(key))
         return failure
 
     def checkNonEquality(self, equality_list):
@@ -279,9 +278,9 @@ class JsonRuleProcessor:
         for kv in equality_list:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
-            if (self.helper.equals(key, v) == True):
+            if self.helper.equals(key, v):
                 failure += " Key %s match found. %s == %s" % (alias, v,
-                           self.helper.get(key))
+                                                              self.helper.get(key))
         return failure
 
     def checkThreshold(self, key, alias, r):
@@ -415,7 +414,7 @@ def parseArgs(args):
     """
 
     parser = argparse.ArgumentParser(
-        description = plugin_description + '\n\nVersion: %s (%s)'
+        description=plugin_description + '\n\nVersion: %s (%s)'
         %(__version__, __version_date__),
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -525,7 +524,7 @@ def debugPrint(debug_flag, message, pretty_flag=False):
             print(message)
 
 
-"""Program entry point"""
+# Program entry point
 if __name__ == "__main__":
 
     args = parseArgs(sys.argv[1:])
@@ -534,7 +533,7 @@ if __name__ == "__main__":
 
     if args.version:
         print('Version: %s - Date: %s' % (__version__, __version_date__))
-        exit(0)
+        sys.exit(0)
 
     if args.ssl:
         url = "https://%s" % args.host
@@ -552,25 +551,25 @@ if __name__ == "__main__":
                     context.load_verify_locations(args.cacert)
                 except ssl.SSLError:
                     nagios.append_unknown(
-                    ''' Error loading SSL CA cert "%s"!'''
-                    % args.cacert)
+                        'Error loading SSL CA cert "%s"!'
+                        % args.cacert)
 
             if args.cert:
                 try:
-                    context.load_cert_chain(args.cert,keyfile=args.key)
+                    context.load_cert_chain(args.cert, keyfile=args.key)
                 except ssl.SSLError:
                     if args.key:
                         nagios.append_unknown(
-                        ''' Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'''
-                        % (args.key, args.cert))
+                            'Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'
+                            % (args.key, args.cert))
                     else:
                         nagios.append_unknown(
-                        ''' Error loading SSL cert. Make sure "%s" contains the key as well!'''
-                        % (args.cert))
+                            'Error loading SSL cert. Make sure "%s" contains the key as well!'
+                            % (args.cert))
 
         if nagios.getCode() != OK_CODE:
             print(nagios.getMessage())
-            exit(nagios.getCode())
+            sys.exit(nagios.getCode())
 
     else:
         url = "http://%s" % args.host
@@ -586,6 +585,7 @@ if __name__ == "__main__":
         req = urllib.request.Request(url)
         req.add_header("User-Agent", "check_http_json")
         if args.auth:
+            # TODO: replace deprecated encodestring
             base64str = base64.encodestring(args.auth).replace('\n', '')
             req.add_header('Authorization', 'Basic %s' % base64str)
         if args.headers:
@@ -595,10 +595,10 @@ if __name__ == "__main__":
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
             response = urllib.request.urlopen(req, timeout=args.timeout,
-                                       data=args.data, context=context)
+                                              data=args.data, context=context)
         elif args.timeout:
             response = urllib.request.urlopen(req, timeout=args.timeout,
-                                       context=context)
+                                              context=context)
         elif args.data:
             response = urllib.request.urlopen(req, data=args.data, context=context)
         else:
@@ -628,6 +628,6 @@ if __name__ == "__main__":
 
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
-    exit(nagios.getCode())
+    sys.exit(nagios.getCode())
 
 #EOF
