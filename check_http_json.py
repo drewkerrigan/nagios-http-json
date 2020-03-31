@@ -1,4 +1,14 @@
-#!/usr/bin/python2.7
+#!/usr/bin/env python3
+
+import urllib.request, urllib.error, urllib.parse
+import base64
+import json
+import argparse
+import sys
+import ssl
+from pprint import pprint
+from urllib.error import HTTPError
+from urllib.error import URLError
 
 plugin_description = \
 """
@@ -9,26 +19,19 @@ argument specified rules and determines the status and performance data for
 that service.
 """
 
-import urllib2
-import base64
-import json
-import argparse
-import sys
-import ssl
-from pprint import pprint
-from urllib2 import HTTPError
-from urllib2 import URLError
-
 OK_CODE = 0
 WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
 
-__version__ = '1.4.0'
-__version_date__ = '2019-05-09'
+__version__ = '2.0.0'
+__version_date__ = '2020-03-22'
 
 class NagiosHelper:
-    """Help with Nagios specific status string formatting."""
+    """
+    Help with Nagios specific status string formatting.
+    """
+
     message_prefixes = {OK_CODE: 'OK',
                         WARNING_CODE: 'WARNING',
                         CRITICAL_CODE: 'CRITICAL',
@@ -38,17 +41,23 @@ class NagiosHelper:
     critical_message = ''
     unknown_message = ''
 
-    def getMessage(self):
-        """Build a status-prefixed message with optional performance data
-        generated externally"""
-        text = "%s: Status %s." % (self.message_prefixes[self.getCode()],
-                                   self.message_prefixes[self.getCode()])
-        text += self.warning_message
-        text += self.critical_message
-        text += self.unknown_message
+    def getMessage(self, message=''):
+        """
+        Build a status-prefixed message with optional performance data
+        generated externally
+        """
+
+        message += self.warning_message
+        message += self.critical_message
+        message += self.unknown_message
+        code = self.message_prefixes[self.getCode()]
+        output = "{code}: Status {code}. {message}".format(code=code, message=message.strip())
         if self.performance_data:
-            text += "|%s" % self.performance_data
-        return text
+            output = "{code}: {perf_data} Status {code}. {message}|{perf_data}".format(
+                code=code,
+                message=message.strip(),
+                perf_data=self.performance_data)
+        return output.strip()
 
     def getCode(self):
         code = OK_CODE
@@ -69,19 +78,23 @@ class NagiosHelper:
     def append_unknown(self, unknown_message):
         self.unknown_message += unknown_message
 
-    def append_metrics(self, (performance_data,
-                              warning_message, critical_message)):
+    def append_metrics(self, metrics):
+        (performance_data, warning_message, critical_message) = metrics
         self.performance_data += performance_data
         self.append_warning(warning_message)
         self.append_critical(critical_message)
 
 
 class JsonHelper:
-    """Perform simple comparison operations against values in a given
-    JSON dict"""
-    def __init__(self, json_data, separator):
+    """
+    Perform simple comparison operations against values in a given
+    JSON dict
+    """
+
+    def __init__(self, json_data, separator, value_separator):
         self.data = json_data
         self.separator = separator
+        self.value_separator = value_separator
         self.arrayOpener = '('
         self.arrayCloser = ')'
 
@@ -91,14 +104,14 @@ class JsonHelper:
         remainingKey = key[separatorIndex + 1:]
         if partialKey in data:
             return self.get(remainingKey, data[partialKey])
-        else:
-            return (None, 'not_found')
+        return (None, 'not_found')
 
     def getSubArrayElement(self, key, data):
         subElemKey = key[:key.find(self.arrayOpener)]
         index = int(key[key.find(self.arrayOpener) +
                         1:key.find(self.arrayCloser)])
         remainingKey = key[key.find(self.arrayCloser + self.separator) + 2:]
+
         if key.find(self.arrayCloser + self.separator) == -1:
             remainingKey = key[key.find(self.arrayCloser) + 1:]
         if subElemKey in data:
@@ -106,6 +119,8 @@ class JsonHelper:
                 return self.get(remainingKey, data[subElemKey][index])
             else:
                 return (None, 'not_found')
+        if index >= len(data):
+            return (None, 'not_found')
         else:
             if not subElemKey:
                 return self.get(remainingKey, data[index])
@@ -114,7 +129,7 @@ class JsonHelper:
 
     def equals(self, key, value):
         return self.exists(key) and \
-            str(self.get(key)) in value.split(':')
+            str(self.get(key)) in value.split(self.value_separator)
 
     def lte(self, key, value):
         return self.exists(key) and float(self.get(key)) <= float(value)
@@ -132,8 +147,11 @@ class JsonHelper:
         return (self.get(key) != (None, 'not_found'))
 
     def get(self, key, temp_data=''):
-        """Can navigate nested json keys with a dot format
-        (Element.Key.NestedKey). Returns (None, 'not_found') if not found"""
+        """
+        Can navigate nested json keys with a dot format
+        (Element.Key.NestedKey). Returns (None, 'not_found') if not found
+        """
+
         if temp_data:
             data = temp_data
         else:
@@ -153,7 +171,7 @@ class JsonHelper:
                 if key.find(self.arrayOpener) != -1:
                     return self.getSubArrayElement(key, data)
                 else:
-                    if key in data:
+                    if isinstance(data, dict) and key in data:
                         return data[key]
                     else:
                         return (None, 'not_found')
@@ -167,10 +185,10 @@ class JsonHelper:
             subElemKey = key[:key.find('(*)')-1]
         remainingKey = key[key.find('(*)')+3:]
         elemData = self.get(subElemKey)
-        if elemData is (None, 'not_found'):
+        if elemData == (None, 'not_found'):
             keys.append(key)
             return keys
-        if subElemKey is not '':
+        if subElemKey != '':
             subElemKey = subElemKey + '.'
         for i in range(len(elemData)):
             newKey = subElemKey + '(' + str(i) + ')' + remainingKey
@@ -192,17 +210,24 @@ def _getKeyAlias(original_key):
 
 
 class JsonRuleProcessor:
-    """Perform checks and gather values from a JSON dict given rules
-    and metrics definitions"""
+    """
+    Perform checks and gather values from a JSON dict given rules
+    and metrics definitions
+    """
+
     def __init__(self, json_data, rules_args):
         self.data = json_data
         self.rules = rules_args
         separator = '.'
+        value_separator = ':'
         if self.rules.separator:
             separator = self.rules.separator
-        self.helper = JsonHelper(self.data, separator)
+        if self.rules.value_separator:
+            value_separator = self.rules.value_separator
+        self.helper = JsonHelper(self.data, separator, value_separator)
         debugPrint(rules_args.debug, "rules:%s" % rules_args)
         debugPrint(rules_args.debug, "separator:%s" % separator)
+        debugPrint(rules_args.debug, "value_separator:%s" % value_separator)
         self.metric_list = self.expandKeys(self.rules.metric_list)
         self.key_threshold_warning = self.expandKeys(
             self.rules.key_threshold_warning)
@@ -222,7 +247,7 @@ class JsonRuleProcessor:
 
     def expandKeys(self, src):
         if src is None:
-            return
+            return []
         dest = []
         for key in src:
             newKeys = self.helper.expandKey(key, [])
@@ -243,9 +268,9 @@ class JsonRuleProcessor:
         for kv in equality_list:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
-            if (self.helper.equals(key, v) == False):
+            if not self.helper.equals(key, v):
                 failure += " Key %s mismatch. %s != %s" % (alias, v,
-                           self.helper.get(key))
+                                                           self.helper.get(key))
         return failure
 
     def checkNonEquality(self, equality_list):
@@ -253,9 +278,9 @@ class JsonRuleProcessor:
         for kv in equality_list:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
-            if (self.helper.equals(key, v) == True):
+            if self.helper.equals(key, v):
                 failure += " Key %s match found. %s == %s" % (alias, v,
-                           self.helper.get(key))
+                                                              self.helper.get(key))
         return failure
 
     def checkThreshold(self, key, alias, r):
@@ -338,8 +363,11 @@ class JsonRuleProcessor:
         return unknown
 
     def checkMetrics(self):
-        """Return a Nagios specific performance metrics string given keys
-        and parameter definitions"""
+        """
+        Return a Nagios specific performance metrics string given keys
+        and parameter definitions
+        """
+
         metrics = ''
         warning = ''
         critical = ''
@@ -380,11 +408,16 @@ class JsonRuleProcessor:
         return ("%s" % metrics, warning, critical)
 
 
-def parseArgs():
+def parseArgs(args):
+    """
+    CLI argument definitions and parsing
+    """
+
     parser = argparse.ArgumentParser(
-    description = plugin_description + '\n\nVersion: %s (%s)'
-    %(__version__, __version_date__),
-    formatter_class=argparse.RawDescriptionHelpFormatter)
+        description=plugin_description + '\n\nVersion: %s (%s)'
+        %(__version__, __version_date__),
+        formatter_class=argparse.RawDescriptionHelpFormatter
+    )
 
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug mode')
@@ -416,6 +449,8 @@ def parseArgs():
     parser.add_argument('-f', '--field_separator', dest='separator',
                         help='''JSON Field separator, defaults to ".";
                         Select element in an array with "(" ")"''')
+    parser.add_argument('-F', '--value_separator', dest='value_separator',
+                        help='''JSON Value separator, defaults to ":"''')
     parser.add_argument('-w', '--warning', dest='key_threshold_warning',
                         nargs='*',
                         help='''Warning threshold for these values
@@ -474,220 +509,31 @@ def parseArgs():
                         (key[>alias],UnitOfMeasure,WarnRange,
                         CriticalRange).''')
 
-    return parser.parse_args()
+    return parser.parse_args(args)
 
 
 def debugPrint(debug_flag, message, pretty_flag=False):
+    """
+    Print debug messages if -d (debug_flat ) is set.
+    """
+
     if debug_flag:
         if pretty_flag:
             pprint(message)
         else:
             print(message)
 
-if __name__ == "__main__" and len(sys.argv) >= 2 and sys.argv[1] == 'UnitTest':
-    import unittest
 
-    class RulesHelper:
-        separator = '.'
-        debug = False
-        key_threshold_warning = None
-        key_value_list = None
-        key_value_list_not = None
-        key_list = None
-        key_threshold_critical = None
-        key_value_list_critical = None
-        key_value_list_not_critical = None
-        key_value_list_unknown = None
-        key_list_critical = None
-        metric_list = None
-
-        def dash_m(self, data):
-            self.metric_list = data
-            return self
-
-        def dash_e(self, data):
-            self.key_list = data
-            return self
-
-        def dash_E(self, data):
-            self.key_list_critical = data
-            return self
-
-        def dash_q(self, data):
-            self.key_value_list = data
-            return self
-
-        def dash_Q(self, data):
-            self.key_value_list_critical = data
-            return self
-
-        def dash_y(self, data):
-            self.key_value_list_not = data
-            return self
-
-        def dash_Y(self, data):
-            self.key_value_list_not_critical = data
-            return self
-
-        def dash_w(self, data):
-            self.key_threshold_warning = data
-            return self
-
-        def dash_c(self, data):
-            self.key_threshold_critical = data
-            return self
-
-    class UnitTest(unittest.TestCase):
-        rules = RulesHelper()
-
-        def check_data(self, args, jsondata, code):
-            data = json.loads(jsondata)
-            nagios = NagiosHelper()
-            processor = JsonRuleProcessor(data, args)
-            nagios.append_warning(processor.checkWarning())
-            nagios.append_critical(processor.checkCritical())
-            nagios.append_metrics(processor.checkMetrics())
-            self.assertEqual(code, nagios.getCode())
-
-        def test_metrics(self):
-            self.check_data(RulesHelper().dash_m(['metric,,1:4,1:5']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_m(['metric,,1:5,1:4']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_m(['metric,,1:5,1:5,6,10']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_m(['metric,,1:5,1:5,1,4']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_m(['metric,s,@1:4,@6:10,1,10']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_m(['(*).value,s,1:5,1:5']),
-                            '[{"value": 5},{"value": 100}]', CRITICAL_CODE)
-
-        def test_exists(self):
-            self.check_data(RulesHelper().dash_e(['nothere']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_E(['nothere']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_e(['metric']),
-                            '{"metric": 5}', OK_CODE)
-
-        def test_equality(self):
-            self.check_data(RulesHelper().dash_q(['metric,6']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_Q(['metric,6']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_q(['metric,5']),
-                            '{"metric": 5}', OK_CODE)
-
-        def test_non_equality(self):
-            self.check_data(RulesHelper().dash_y(['metric,6']),
-                            '{"metric": 6}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_Y(['metric,6']),
-                            '{"metric": 6}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_y(['metric,5']),
-                            '{"metric": 6}', OK_CODE)
-
-        def test_warning_thresholds(self):
-            self.check_data(RulesHelper().dash_w(['metric,5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,5:']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,~:5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,1:5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@5:']),
-                            '{"metric": 4}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@~:5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@1:5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,5']),
-                            '{"metric": 6}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,5:']),
-                            '{"metric": 4}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,~:5']),
-                            '{"metric": 6}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,1:5']),
-                            '{"metric": 6}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@5']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@5:']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@~:5']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['metric,@1:5']),
-                            '{"metric": 5}', WARNING_CODE)
-            self.check_data(RulesHelper().dash_w(['(*).value,@1:5']),
-                            '[{"value": 5},{"value": 1000}]', WARNING_CODE)
-
-        def test_critical_thresholds(self):
-            self.check_data(RulesHelper().dash_c(['metric,5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,5:']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,~:5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,1:5']),
-                            '{"metric": 5}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@5:']),
-                            '{"metric": 4}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@~:5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@1:5']),
-                            '{"metric": 6}', OK_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,5']),
-                            '{"metric": 6}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,5:']),
-                            '{"metric": 4}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,~:5']),
-                            '{"metric": 6}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,1:5']),
-                            '{"metric": 6}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@5']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@5:']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@~:5']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['metric,@1:5']),
-                            '{"metric": 5}', CRITICAL_CODE)
-            self.check_data(RulesHelper().dash_c(['(*).value,@1:5']),
-                            '[{"value": 5},{"value": 1000}]', CRITICAL_CODE)
-
-        def test_separator(self):
-            rules = RulesHelper()
-            rules.separator = '_'
-            self.check_data(
-                rules.dash_q(
-                    ['(0)_gauges_jvm.buffers.direct.capacity(1)_value,1234']),
-                '''[{ "gauges": { "jvm.buffers.direct.capacity": [
-                {"value": 215415},{"value": 1234}]}}]''',
-                OK_CODE)
-            self.check_data(
-                rules.dash_q(
-                    ['(*)_gauges_jvm.buffers.direct.capacity(1)_value,1234']),
-                '''[{ "gauges": { "jvm.buffers.direct.capacity": [
-                {"value": 215415},{"value": 1234}]}},
-                { "gauges": { "jvm.buffers.direct.capacity": [
-                {"value": 215415},{"value": 1235}]}}]''',
-                WARNING_CODE)
-    unittest.main()
-    exit(0)
-
-"""Program entry point"""
+# Program entry point
 if __name__ == "__main__":
-    args = parseArgs()
+
+    args = parseArgs(sys.argv[1:])
     nagios = NagiosHelper()
     context = None
 
     if args.version:
         print('Version: %s - Date: %s' % (__version__, __version_date__))
-        exit(0)
+        sys.exit(0)
 
     if args.ssl:
         url = "https://%s" % args.host
@@ -705,25 +551,25 @@ if __name__ == "__main__":
                     context.load_verify_locations(args.cacert)
                 except ssl.SSLError:
                     nagios.append_unknown(
-                    ''' Error loading SSL CA cert "%s"!'''
-                    % args.cacert)
+                        'Error loading SSL CA cert "%s"!'
+                        % args.cacert)
 
             if args.cert:
                 try:
-                    context.load_cert_chain(args.cert,keyfile=args.key)
+                    context.load_cert_chain(args.cert, keyfile=args.key)
                 except ssl.SSLError:
                     if args.key:
                         nagios.append_unknown(
-                        ''' Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'''
-                        % (args.key, args.cert))
+                            'Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'
+                            % (args.key, args.cert))
                     else:
                         nagios.append_unknown(
-                        ''' Error loading SSL cert. Make sure "%s" contains the key as well!'''
-                        % (args.cert))
+                            'Error loading SSL cert. Make sure "%s" contains the key as well!'
+                            % (args.cert))
 
         if nagios.getCode() != OK_CODE:
             print(nagios.getMessage())
-            exit(nagios.getCode())
+            sys.exit(nagios.getCode())
 
     else:
         url = "http://%s" % args.host
@@ -731,13 +577,16 @@ if __name__ == "__main__":
         url += ":%s" % args.port
     if args.path:
         url += "/%s" % args.path
+
     debugPrint(args.debug, "url:%s" % url)
     json_data = ''
+
     try:
-        req = urllib2.Request(url)
+        req = urllib.request.Request(url)
         req.add_header("User-Agent", "check_http_json")
         if args.auth:
-            base64str = base64.encodestring(args.auth).replace('\n', '')
+            authbytes = str(args.auth).encode()
+            base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
             req.add_header('Authorization', 'Basic %s' % base64str)
         if args.headers:
             headers = json.loads(args.headers)
@@ -745,15 +594,15 @@ if __name__ == "__main__":
             for header in headers:
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
-            response = urllib2.urlopen(req, timeout=args.timeout,
-                                       data=args.data, context=context)
+            response = urllib.request.urlopen(req, timeout=args.timeout,
+                                              data=args.data, context=context)
         elif args.timeout:
-            response = urllib2.urlopen(req, timeout=args.timeout,
-                                       context=context)
+            response = urllib.request.urlopen(req, timeout=args.timeout,
+                                              context=context)
         elif args.data:
-            response = urllib2.urlopen(req, data=args.data, context=context)
+            response = urllib.request.urlopen(req, data=args.data, context=context)
         else:
-            response = urllib2.urlopen(req, context=context)
+            response = urllib.request.urlopen(req, context=context)
 
         json_data = response.read()
 
@@ -779,6 +628,6 @@ if __name__ == "__main__":
 
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
-    exit(nagios.getCode())
+    sys.exit(nagios.getCode())
 
 #EOF
