@@ -243,7 +243,10 @@ define command{
 
 ```
 
-More info about options in Usage.
+## Icinga2 configuration
+
+The Icinga2 command definition can be found here: (contrib/icinga2_check_command_definition.conf)
+
 
 ## License
 
