@@ -20,7 +20,7 @@ Executing `./check_http_json.py -h` will yield the following details:
 usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
                           [--cert CERT] [--key KEY] [-P PORT] [-p PATH]
                           [-t TIMEOUT] [-B AUTH] [-D DATA] [-A HEADERS]
-                          [-f SEPARATOR]
+                          [-f FIELD_SEPARATOR] [-F VALUE_SEPARATOR]
                           [-w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]]
                           [-c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]]
                           [-e [KEY_LIST [KEY_LIST ...]]]
@@ -62,6 +62,8 @@ optional arguments:
   -f SEPARATOR, --field_separator SEPARATOR
                         JSON Field separator, defaults to "."; Select element
                         in an array with "(" ")"
+  -F SEPARATOR, --value_separator SEPARATOR
+                        JSON Value separator, defaults to ":";
   -w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]], --warning [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]
                         Warning threshold for these values
                         (key1[>alias],WarnRange key2[>alias],WarnRange).
