@@ -50,7 +50,7 @@ class MainTest(unittest.TestCase):
 
     @mock.patch('builtins.print')
     @mock.patch('urllib.request.urlopen')
-    def test_main_with_error(self, mock_request, mock_print):
+    def test_main_with_parse_error(self, mock_request, mock_print):
         args = '-H localhost'.split(' ')
 
         mock_request.return_value = MockResponse(content='not JSON')
@@ -58,5 +58,40 @@ class MainTest(unittest.TestCase):
         with self.assertRaises(SystemExit) as test:
             main(args)
 
-        # Returns Parser Error
+        self.assertTrue('Parser error' in str(mock_print.call_args))
         self.assertEqual(test.exception.code, 3)
+
+    @mock.patch('builtins.print')
+    def test_main_with_url_error(self, mock_print):
+        args = '-H localhost'.split(' ')
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertTrue('URLError' in str(mock_print.call_args))
+        self.assertEqual(test.exception.code, 3)
+
+    @mock.patch('builtins.print')
+    @mock.patch('urllib.request.urlopen')
+    def test_main_with_http_error_no_json(self, mock_request, mock_print):
+        args = '-H localhost'.split(' ')
+
+        mock_request.return_value = MockResponse(content='not JSON', status_code=503)
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertTrue('Parser error' in str(mock_print.call_args))
+        self.assertEqual(test.exception.code, 3)
+
+    @mock.patch('builtins.print')
+    @mock.patch('urllib.request.urlopen')
+    def test_main_with_http_error_valid_json(self, mock_request, mock_print):
+        args = '-H localhost'.split(' ')
+
+        mock_request.return_value = MockResponse(status_code=503)
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertEqual(test.exception.code, 0)
