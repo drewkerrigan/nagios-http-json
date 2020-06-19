@@ -8,37 +8,55 @@ import os
 
 sys.path.append('..')
 
-from check_http_json import debugPrint
+from check_http_json import main
+
+
+class MockResponse():
+    def __init__(self, status_code=200, content='{}'):
+        self.status_code = status_code
+        self.content = content
+
+    def read(self):
+        return self.content
 
 
 class MainTest(unittest.TestCase):
     """
-    Tests for main
+    Tests for Main
     """
 
-    def setUp(self):
-        """
-        Defining the exitcodes
-        """
+    @mock.patch('builtins.print')
+    def test_main_version(self, mock_print):
+        args = ['--version']
 
-        self.exit_0 = 0 << 8
-        self.exit_1 = 1 << 8
-        self.exit_2 = 2 << 8
-        self.exit_3 = 3 << 8
+        with self.assertRaises(SystemExit) as test:
+            main(args)
 
-    def test_debugprint(self):
-        with mock.patch('builtins.print') as mock_print:
-            debugPrint(True, 'debug')
-            mock_print.assert_called_once_with('debug')
+        mock_print.assert_called_once()
+        self.assertEqual(test.exception.code, 0)
 
-    def test_debugprint_pprint(self):
-        with mock.patch('check_http_json.pprint') as mock_pprint:
-            debugPrint(True, 'debug', True)
-            mock_pprint.assert_called_once_with('debug')
+    @mock.patch('builtins.print')
+    @mock.patch('urllib.request.urlopen')
+    def test_main_with_ssl(self, mock_request, mock_print):
+        args = '-H localhost --ssl'.split(' ')
 
-    def test_cli_without_params(self):
+        mock_request.return_value = MockResponse()
 
-        command = '/usr/bin/env python3 check_http_json.py > /dev/null 2>&1'
-        status = os.system(command)
+        with self.assertRaises(SystemExit) as test:
+            main(args)
 
-        self.assertEqual(status, self.exit_2)
+        self.assertEqual(test.exception.code, 0)
+
+
+    @mock.patch('builtins.print')
+    @mock.patch('urllib.request.urlopen')
+    def test_main_with_error(self, mock_request, mock_print):
+        args = '-H localhost'.split(' ')
+
+        mock_request.return_value = MockResponse(content='not JSON')
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        # Returns Parser Error
+        self.assertEqual(test.exception.code, 3)

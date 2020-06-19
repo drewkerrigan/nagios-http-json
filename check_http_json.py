@@ -424,7 +424,7 @@ def parseArgs(args):
     parser.add_argument('-s', '--ssl', action='store_true',
                         help='use TLS to connect to remote host')
     parser.add_argument('-H', '--host', dest='host',
-                        required=not ('-V' in sys.argv or '--version' in sys.argv),
+                        required=not ('-V' in args or '--version' in args),
                         help='remote host to query')
     parser.add_argument('-k', '--insecure', action='store_true',
                         help='do not check server SSL certificate')
@@ -524,10 +524,12 @@ def debugPrint(debug_flag, message, pretty_flag=False):
             print(message)
 
 
-# Program entry point
-if __name__ == "__main__":
+def main(cliargs):
+    """
+    Main entrypoint for CLI
+    """
 
-    args = parseArgs(sys.argv[1:])
+    args = parseArgs(cliargs)
     nagios = NagiosHelper()
     context = None
 
@@ -629,5 +631,10 @@ if __name__ == "__main__":
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
     sys.exit(nagios.getCode())
+
+
+if __name__ == "__main__":
+    # Program entry point
+    main(sys.argv[1:])
 
 #EOF
