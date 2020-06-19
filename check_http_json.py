@@ -609,7 +609,11 @@ def main(cliargs):
         json_data = response.read()
 
     except HTTPError as e:
-        nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
+        # Try to recover from HTTP Error, if there is JSON in the response
+        if e.info().get_content_subtype() == "json":
+            json_data = e.read()
+        else:
+            nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
         nagios.append_critical(" URLError[%s], url:%s" % (str(e.reason), url))
 
