@@ -225,9 +225,9 @@ class JsonRuleProcessor:
         if self.rules.value_separator:
             value_separator = self.rules.value_separator
         self.helper = JsonHelper(self.data, separator, value_separator)
-        debugPrint(rules_args.debug, "rules:%s" % rules_args)
-        debugPrint(rules_args.debug, "separator:%s" % separator)
-        debugPrint(rules_args.debug, "value_separator:%s" % value_separator)
+        debugPrint(rules_args.debug, "rules: %s" % rules_args)
+        debugPrint(rules_args.debug, "separator: %s" % separator)
+        debugPrint(rules_args.debug, "value_separator: %s" % value_separator)
         self.metric_list = self.expandKeys(self.rules.metric_list)
         self.key_threshold_warning = self.expandKeys(
             self.rules.key_threshold_warning)
