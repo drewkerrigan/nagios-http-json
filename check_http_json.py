@@ -346,6 +346,8 @@ class JsonRuleProcessor:
 
     def checkCritical(self):
         failure = ''
+        if not self.data:
+            failure = " Empty JSON data."
         if self.key_threshold_critical is not None:
             failure += self.checkThresholds(self.key_threshold_critical)
         if self.key_value_list_critical is not None:
