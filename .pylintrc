@@ -1,5 +1,5 @@
 # pylint config
 [MESSAGES CONTROL]
-disable=line-too-long, redefined-outer-name, too-many-arguments, too-many-instance-attributes, fixme, invalid-name, superfluous-parens, missing-function-docstring, missing-module-docstring, multiple-imports, no-else-return, too-many-return-statements
+disable=line-too-long, redefined-outer-name, too-many-arguments, too-many-instance-attributes, fixme, invalid-name, superfluous-parens, missing-function-docstring, missing-module-docstring, multiple-imports, no-else-return, too-many-return-statements, too-many-branches, too-many-statements
 [MASTER]
 ignore-patterns=^test.*
