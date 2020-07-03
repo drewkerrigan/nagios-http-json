@@ -225,9 +225,9 @@ class JsonRuleProcessor:
         if self.rules.value_separator:
             value_separator = self.rules.value_separator
         self.helper = JsonHelper(self.data, separator, value_separator)
-        debugPrint(rules_args.debug, "rules:%s" % rules_args)
-        debugPrint(rules_args.debug, "separator:%s" % separator)
-        debugPrint(rules_args.debug, "value_separator:%s" % value_separator)
+        debugPrint(rules_args.debug, "rules: %s" % rules_args)
+        debugPrint(rules_args.debug, "separator: %s" % separator)
+        debugPrint(rules_args.debug, "value_separator: %s" % value_separator)
         self.metric_list = self.expandKeys(self.rules.metric_list)
         self.key_threshold_warning = self.expandKeys(
             self.rules.key_threshold_warning)
@@ -346,6 +346,8 @@ class JsonRuleProcessor:
 
     def checkCritical(self):
         failure = ''
+        if not self.data:
+            failure = " Empty JSON data."
         if self.key_threshold_critical is not None:
             failure += self.checkThresholds(self.key_threshold_critical)
         if self.key_value_list_critical is not None:
