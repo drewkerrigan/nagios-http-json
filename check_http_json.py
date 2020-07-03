@@ -612,7 +612,7 @@ def main(cliargs):
 
     except HTTPError as e:
         # Try to recover from HTTP Error, if there is JSON in the response
-        if e.info().get_content_subtype() == "json":
+        if "json" in e.info().get_content_subtype():
             json_data = e.read()
         else:
             nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
