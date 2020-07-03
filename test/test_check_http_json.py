@@ -256,7 +256,7 @@ class UtilTest(unittest.TestCase):
 
         # This should not throw a KeyError
         data = '{}'
-        self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing']), data, WARNING_CODE)
+        self.check_data(rules.dash_q(['(0).Node,foobar', '(1).Node,missing']), data, CRITICAL_CODE)
 
     def test_subelem(self):
 
@@ -274,3 +274,23 @@ class UtilTest(unittest.TestCase):
         self.check_data(rules.dash_E(['(*).capacity.value.too_deep']), data, CRITICAL_CODE)
         # Should not throw keyerror
         self.check_data(rules.dash_E(['foo']), data, CRITICAL_CODE)
+
+
+    def test_empty_key_value_array(self):
+        """
+        https://github.com/drewkerrigan/nagios-http-json/issues/61
+        """
+
+        rules = RulesHelper()
+
+        # This should simply work
+        data = '[{"update_status": "finished"},{"update_status": "finished"}]'
+        self.check_data(rules.dash_q(['(*).update_status,finished']), data, OK_CODE)
+
+        # This should warn us
+        data = '[{"update_status": "finished"},{"update_status": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update_status,finished']), data, WARNING_CODE)
+
+        # This should throw an error
+        data = '[]'
+        self.check_data(rules.dash_q(['(*).update_status,warn_me']), data, CRITICAL_CODE)
