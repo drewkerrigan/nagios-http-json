@@ -152,7 +152,7 @@ class JsonHelper:
         (Element.Key.NestedKey). Returns (None, 'not_found') if not found
         """
 
-        if temp_data:
+        if temp_data != '':
             data = temp_data
         else:
             data = self.data
