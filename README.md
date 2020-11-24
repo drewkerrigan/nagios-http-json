@@ -210,7 +210,7 @@ More info about Nagios Range format and Units of Measure can be found at [https:
 
 ### Requirements
 
-* Python 3
+* Python 3.6+
 
 ### Configuration
 
