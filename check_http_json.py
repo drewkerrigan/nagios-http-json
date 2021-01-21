@@ -550,6 +550,7 @@ def main(cliargs):
             context.verify_mode = ssl.CERT_NONE
         else:
             context.verify_mode = ssl.CERT_OPTIONAL
+            context.load_default_certs()
             if args.cacert:
                 try:
                     context.load_verify_locations(args.cacert)
