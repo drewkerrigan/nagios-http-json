@@ -599,13 +599,15 @@ def main(cliargs):
             for header in headers:
                 req.add_header(header, headers[header])
         if args.timeout and args.data:
+            databytes = str(args.data).encode()
             response = urllib.request.urlopen(req, timeout=args.timeout,
-                                              data=args.data, context=context)
+                                              data=databytes, context=context)
         elif args.timeout:
             response = urllib.request.urlopen(req, timeout=args.timeout,
                                               context=context)
         elif args.data:
-            response = urllib.request.urlopen(req, data=args.data, context=context)
+            databytes = str(args.data).encode()
+            response = urllib.request.urlopen(req, data=databytes, context=context)
         else:
             response = urllib.request.urlopen(req, context=context)
 
