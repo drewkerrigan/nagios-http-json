@@ -609,6 +609,7 @@ def main(cliargs):
             databytes = str(args.data).encode()
             response = urllib.request.urlopen(req, data=databytes, context=context)
         else:
+            # pylint: disable=consider-using-with
             response = urllib.request.urlopen(req, context=context)
 
         json_data = response.read()
