@@ -430,6 +430,8 @@ def parseArgs(args):
                         help='remote host to query')
     parser.add_argument('-k', '--insecure', action='store_true',
                         help='do not check server SSL certificate')
+    parser.add_argument('-X', '--request', dest='method', default='GET', choices=['GET', 'POST'],
+                        help='Specifies a custom request method to use when communicating  with  the HTTP server')
     parser.add_argument('-V', '--version', action='store_true',
                         help='print version of this plugin')
     parser.add_argument('--cacert',
@@ -587,7 +589,7 @@ def main(cliargs):
     json_data = ''
 
     try:
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, method=args.method)
         req.add_header("User-Agent", "check_http_json")
         if args.auth:
             authbytes = str(args.auth).encode()
