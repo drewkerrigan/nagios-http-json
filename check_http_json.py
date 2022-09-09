@@ -542,7 +542,7 @@ def main(cliargs):
     if args.ssl:
         url = "https://%s" % args.host
 
-        context = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
         context.options |= ssl.OP_NO_SSLv2
         context.options |= ssl.OP_NO_SSLv3
 
