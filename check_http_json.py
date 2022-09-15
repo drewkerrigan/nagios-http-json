@@ -24,8 +24,8 @@ WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
 
-__version__ = '2.0.0'
-__version_date__ = '2020-03-22'
+__version__ = '2.1.2'
+__version_date__ = '2022-09-15'
 
 class NagiosHelper:
     """

@@ -38,7 +38,7 @@ Generic Nagios plugin which checks json values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
 
-Version: 2.0.0 (2020-03-22)
+Version: 2.1.2 (2022-09-15)
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -46,6 +46,8 @@ optional arguments:
   -s, --ssl             use TLS to connect to remote host
   -H HOST, --host HOST  remote host to query
   -k, --insecure        do not check server SSL certificate
+  -X {GET,POST}, --request {GET,POST}
+                        Specifies a custom request method to use when communicating with the HTTP server
   -V, --version         print version of this plugin
   --cacert CACERT       SSL CA certificate
   --cert CERT           SSL client certificate
