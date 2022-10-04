@@ -549,6 +549,7 @@ def main(cliargs):
         context.options |= ssl.OP_NO_SSLv3
 
         if args.insecure:
+            context.check_hostname = False
             context.verify_mode = ssl.CERT_NONE
         else:
             context.verify_mode = ssl.CERT_OPTIONAL
