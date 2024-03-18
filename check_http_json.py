@@ -6,7 +6,6 @@ import json
 import argparse
 import sys
 import ssl
-from pprint import pprint
 from urllib.error import HTTPError
 from urllib.error import URLError
 
@@ -422,6 +421,9 @@ def parseArgs(args):
 
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug mode')
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help='Verbose mode. Multiple -v options increase the verbosity')
+
     parser.add_argument('-s', '--ssl', action='store_true',
                         help='use TLS to connect to remote host')
     parser.add_argument('-H', '--host', dest='host',
@@ -517,17 +519,24 @@ def parseArgs(args):
     return parser.parse_args(args)
 
 
-def debugPrint(debug_flag, message, pretty_flag=False):
+def debugPrint(debug_flag, message):
     """
-    Print debug messages if -d (debug_flat ) is set.
+    Print debug messages if -d is set.
     """
+    if not debug_flag:
+        return
 
-    if debug_flag:
-        if pretty_flag:
-            pprint(message)
-        else:
-            print(message)
+    print(message)
 
+def verbosePrint(verbose_flag, when, message):
+    """
+    Print verbose messages if -v is set.
+    Since -v can be used multiple times, the when parameter sets the required amount before printing
+    """
+    if not verbose_flag:
+        return
+    if verbose_flag >= when:
+        print(message)
 
 def prepare_context(args):
     """
@@ -621,7 +630,7 @@ def main(cliargs):
     if args.path:
         url += "/%s" % args.path
 
-    debugPrint(args.debug, "url:%s" % url)
+    debugPrint(args.debug, "url: %s" % url)
     json_data = ''
 
     try:
@@ -644,10 +653,8 @@ def main(cliargs):
         data = json.loads(json_data)
     except ValueError as e:
         nagios.append_message(UNKNOWN_CODE, " JSON Parser error: %s" % str(e))
-
     else:
-        debugPrint(args.debug, 'json:')
-        debugPrint(args.debug, data, True)
+        verbosePrint(args.verbose, 1, json.dumps(data, indent=2))
         # Apply rules to returned JSON data
         processor = JsonRuleProcessor(data, args)
         nagios.append_message(WARNING_CODE, processor.checkWarning())
