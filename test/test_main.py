@@ -95,3 +95,37 @@ class MainTest(unittest.TestCase):
             main(args)
 
         self.assertEqual(test.exception.code, 0)
+
+    @mock.patch('builtins.print')
+    def test_main_with_tls(self, mock_print):
+        args = ['-H', 'localhost',
+                '--ssl',
+                '--cacert',
+                'test/tls/ca-root.pem',
+                '--cert',
+                'test/tls/cert.pem',
+                '--key',
+                'test/tls/key.pem']
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertTrue('https://localhost' in str(mock_print.call_args))
+        self.assertEqual(test.exception.code, 3)
+
+    @mock.patch('builtins.print')
+    def test_main_with_tls_wrong_ca(self, mock_print):
+        args = ['-H', 'localhost',
+                '--ssl',
+                '--cacert',
+                'test/tls/key.pem',
+                '--cert',
+                'test/tls/cert.pem',
+                '--key',
+                'test/tls/key.pem']
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertTrue('Error loading SSL CA' in str(mock_print.call_args))
+        self.assertEqual(test.exception.code, 3)

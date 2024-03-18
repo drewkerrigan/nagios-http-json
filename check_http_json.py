@@ -528,6 +528,75 @@ def debugPrint(debug_flag, message, pretty_flag=False):
             print(message)
 
 
+def prepare_context(args):
+    """
+    Prepare TLS Context
+    """
+    nagios = NagiosHelper()
+
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.options |= ssl.OP_NO_SSLv2
+    context.options |= ssl.OP_NO_SSLv3
+
+    if args.insecure:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+    else:
+        context.verify_mode = ssl.CERT_OPTIONAL
+        context.load_default_certs()
+        if args.cacert:
+            try:
+                context.load_verify_locations(args.cacert)
+            except ssl.SSLError:
+                nagios.append_unknown('Error loading SSL CA cert "%s"!' % args.cacert)
+        if args.cert:
+            try:
+                context.load_cert_chain(args.cert, keyfile=args.key)
+            except ssl.SSLError:
+                if args.key:
+                    nagios.append_unknown('Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!' % (args.key, args.cert))
+                else:
+                    nagios.append_unknown('Error loading SSL cert. Make sure "%s" contains the key as well!' % (args.cert))
+
+    if nagios.getCode() != OK_CODE:
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
+
+    return context
+
+
+def make_request(args, url, context):
+    """
+    Performs the actual request to the given URL
+    """
+    req = urllib.request.Request(url, method=args.method)
+    req.add_header("User-Agent", "check_http_json")
+    if args.auth:
+        authbytes = str(args.auth).encode()
+        base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
+        req.add_header('Authorization', 'Basic %s' % base64str)
+    if args.headers:
+        headers = json.loads(args.headers)
+        debugPrint(args.debug, "Headers:\n %s" % headers)
+        for header in headers:
+            req.add_header(header, headers[header])
+    if args.timeout and args.data:
+        databytes = str(args.data).encode()
+        response = urllib.request.urlopen(req, timeout=args.timeout,
+                                          data=databytes, context=context)
+    elif args.timeout:
+        response = urllib.request.urlopen(req, timeout=args.timeout,
+                                          context=context)
+    elif args.data:
+        databytes = str(args.data).encode()
+        response = urllib.request.urlopen(req, data=databytes, context=context)
+    else:
+        # pylint: disable=consider-using-with
+        response = urllib.request.urlopen(req, context=context)
+
+    return response.read()
+
+
 def main(cliargs):
     """
     Main entrypoint for CLI
@@ -543,42 +612,7 @@ def main(cliargs):
 
     if args.ssl:
         url = "https://%s" % args.host
-
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        context.options |= ssl.OP_NO_SSLv2
-        context.options |= ssl.OP_NO_SSLv3
-
-        if args.insecure:
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-        else:
-            context.verify_mode = ssl.CERT_OPTIONAL
-            context.load_default_certs()
-            if args.cacert:
-                try:
-                    context.load_verify_locations(args.cacert)
-                except ssl.SSLError:
-                    nagios.append_unknown(
-                        'Error loading SSL CA cert "%s"!'
-                        % args.cacert)
-
-            if args.cert:
-                try:
-                    context.load_cert_chain(args.cert, keyfile=args.key)
-                except ssl.SSLError:
-                    if args.key:
-                        nagios.append_unknown(
-                            'Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'
-                            % (args.key, args.cert))
-                    else:
-                        nagios.append_unknown(
-                            'Error loading SSL cert. Make sure "%s" contains the key as well!'
-                            % (args.cert))
-
-        if nagios.getCode() != OK_CODE:
-            print(nagios.getMessage())
-            sys.exit(nagios.getCode())
-
+        context = prepare_context(args)
     else:
         url = "http://%s" % args.host
     if args.port:
@@ -590,33 +624,7 @@ def main(cliargs):
     json_data = ''
 
     try:
-        req = urllib.request.Request(url, method=args.method)
-        req.add_header("User-Agent", "check_http_json")
-        if args.auth:
-            authbytes = str(args.auth).encode()
-            base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
-            req.add_header('Authorization', 'Basic %s' % base64str)
-        if args.headers:
-            headers = json.loads(args.headers)
-            debugPrint(args.debug, "Headers:\n %s" % headers)
-            for header in headers:
-                req.add_header(header, headers[header])
-        if args.timeout and args.data:
-            databytes = str(args.data).encode()
-            response = urllib.request.urlopen(req, timeout=args.timeout,
-                                              data=databytes, context=context)
-        elif args.timeout:
-            response = urllib.request.urlopen(req, timeout=args.timeout,
-                                              context=context)
-        elif args.data:
-            databytes = str(args.data).encode()
-            response = urllib.request.urlopen(req, data=databytes, context=context)
-        else:
-            # pylint: disable=consider-using-with
-            response = urllib.request.urlopen(req, context=context)
-
-        json_data = response.read()
-
+        json_data = make_request(args, url, context)
     except HTTPError as e:
         # Try to recover from HTTP Error, if there is JSON in the response
         if "json" in e.info().get_content_subtype():
