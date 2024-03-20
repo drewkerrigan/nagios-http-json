@@ -302,3 +302,30 @@ class UtilTest(unittest.TestCase):
         # This should throw an error
         data = '[]'
         self.check_data(rules.dash_q(['(*).update_status,warn_me']), data, CRITICAL_CODE)
+
+    def test_bracket_in_key(self):
+        """
+        https://github.com/drewkerrigan/nagios-http-json/issues/76
+        """
+
+        rules = RulesHelper()
+
+        # This should work
+        data = '[{"update status": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update status,failure']), data, OK_CODE)
+
+        data = '[{"update (status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (status),failure']), data, OK_CODE)
+
+        data = '[{"update (((status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (((status),failure']), data, OK_CODE)
+
+        data = '[{"update )status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update )status),failure']), data, OK_CODE)
+
+        data = '[{"update (status": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (status),failure']), data, WARNING_CODE)
+
+        # Does not yet work
+        # data = '{"update (foobar)": ["bar"]}'
+        # self.check_data(rules.dash_q(['update (foobar)(0),bar']), data, OK_CODE)

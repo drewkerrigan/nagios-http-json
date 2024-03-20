@@ -156,25 +156,30 @@ class JsonHelper:
             data = temp_data
         else:
             data = self.data
+
         if len(key) <= 0:
             return data
-        if key.find(self.separator) != -1 and \
-           key.find(self.arrayOpener) != -1:
+
+
+        if key.find(self.separator) != -1 and key.find(self.arrayOpener) != -1:
             if key.find(self.separator) < key.find(self.arrayOpener):
                 return self.getSubElement(key, data)
             else:
                 return self.getSubArrayElement(key, data)
-        else:
-            if key.find(self.separator) != -1:
-                return self.getSubElement(key, data)
-            else:
-                if key.find(self.arrayOpener) != -1:
-                    return self.getSubArrayElement(key, data)
-                else:
-                    if isinstance(data, dict) and key in data:
-                        return data[key]
-                    else:
-                        return (None, 'not_found')
+
+        if key.find(self.separator) != -1:
+            return self.getSubElement(key, data)
+
+        if key.find(self.arrayOpener) != -1:
+            # If we got an arrayOpener but the next char is not [0-9] or * then it might just be a string
+            # This isn't optimal since this 'update (foobar)(0)' still won't work
+            if key[key.find(self.arrayOpener)+1].isnumeric() or key[key.find(self.arrayOpener)+1] == "*":
+                return self.getSubArrayElement(key, data)
+
+        if isinstance(data, dict) and key in data:
+            return data[key]
+
+        return (None, 'not_found')
 
     def expandKey(self, key, keys):
         if '(*)' not in key:
