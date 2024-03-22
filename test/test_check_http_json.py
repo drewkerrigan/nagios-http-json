@@ -110,6 +110,14 @@ class UtilTest(unittest.TestCase):
         self.check_data(RulesHelper().dash_U(['metric,0']),
                         '{"metric": 3}', UNKNOWN_CODE)
 
+    def test_array(self):
+        self.check_data(RulesHelper().dash_q(['foo(0),bar']),
+                        '{"foo": ["bar"]}', OK_CODE)
+        self.check_data(RulesHelper().dash_q(['foo(0),foo']),
+                        '{"foo": ["bar"]}', WARNING_CODE)
+        self.check_data(RulesHelper().dash_Q(['foo(1),bar']),
+                        '{"foo": ["bar"]}', CRITICAL_CODE)
+
     def test_exists(self):
         self.check_data(RulesHelper().dash_e(['nothere']),
                         '{"metric": 5}', WARNING_CODE)
