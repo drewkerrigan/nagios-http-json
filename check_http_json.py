@@ -9,6 +9,7 @@ import ssl
 from pprint import pprint
 from urllib.error import HTTPError
 from urllib.error import URLError
+from datetime import datetime, timedelta
 
 plugin_description = \
 """
@@ -236,11 +237,13 @@ class JsonRuleProcessor:
         self.key_value_list = self.expandKeys(self.rules.key_value_list)
         self.key_value_list_not = self.expandKeys(
             self.rules.key_value_list_not)
+        self.key_time_list = self.expandKeys(self.rules.key_time_list)
         self.key_list = self.expandKeys(self.rules.key_list)
         self.key_value_list_critical = self.expandKeys(
             self.rules.key_value_list_critical)
         self.key_value_list_not_critical = self.expandKeys(
             self.rules.key_value_list_not_critical)
+        self.key_time_list_critical = self.expandKeys(self.rules.key_time_list_critical)
         self.key_list_critical = self.expandKeys(self.rules.key_list_critical)
         self.key_value_list_unknown = self.expandKeys(
             self.rules.key_value_list_unknown)
@@ -331,6 +334,68 @@ class JsonRuleProcessor:
             key, alias = _getKeyAlias(k)
             failure += self.checkThreshold(key, alias, r)
         return failure
+    
+    def checkTimestamp(self, key, alias, r):
+        failure = ''
+        invert = False
+        negative = False
+        if r.startswith('@'):
+            invert = True
+            r = r[1:]
+        if r.startswith('-'):
+            negative = True
+            r = r[1:]
+        duration = int(r[:-1])
+        unit = r[-1]
+
+        if unit == 's':
+            tiemduration = timedelta(seconds=duration)
+        elif unit == 'm':
+            tiemduration = timedelta(minutes=duration)
+        elif unit == 'h':
+            tiemduration = timedelta(hours=duration)
+        elif unit == 'd':
+            tiemduration = timedelta(days=duration)
+        else:
+            return " Value (%s) is not a vaild timeduration." (r)
+
+        if not self.helper.exists(key):
+            return " Key (%s) for key %s not Exists." % \
+                           (key, alias)
+
+        try:
+            timestamp = datetime.fromisoformat(self.helper.get(key)).replace(tzinfo=None)
+        except:
+            return " Value (%s) for key %s is not a Date in ISO format." % \
+                           (self.helper.get(key), alias)
+        
+        now = datetime.now()
+        age = now - timestamp
+
+        if not negative:
+            if age > tiemduration and not invert:
+                failure += " Value (%s) for key %s is older than now-%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+            if not age > tiemduration and invert:
+                failure += " Value (%s) for key %s is newer than now-%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+        else:
+            if age < -tiemduration and not invert:
+                failure += " Value (%s) for key %s is newer than now+%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+            if not age < -tiemduration and invert:
+                failure += " Value (%s) for key %s is older than now+%s%s.." % \
+                           (self.helper.get(key), alias, duration, unit)
+
+        return failure
+
+    def checkTimestamps(self, threshold_list):
+        failure = ''
+        for threshold in threshold_list:
+            k, r = threshold.split(',')
+            key, alias = _getKeyAlias(k)
+            failure += self.checkTimestamp(key, alias, r)
+        return failure
 
     def checkWarning(self):
         failure = ''
@@ -340,6 +405,8 @@ class JsonRuleProcessor:
             failure += self.checkEquality(self.key_value_list)
         if self.key_value_list_not is not None:
             failure += self.checkNonEquality(self.key_value_list_not)
+        if self.key_time_list is not None:
+            failure += self.checkTimestamps(self.key_time_list)
         if self.key_list is not None:
             failure += self.checkExists(self.key_list)
         return failure
@@ -354,6 +421,8 @@ class JsonRuleProcessor:
             failure += self.checkEquality(self.key_value_list_critical)
         if self.key_value_list_not_critical is not None:
             failure += self.checkNonEquality(self.key_value_list_not_critical)
+        if self.key_time_list_critical is not None:
+            failure += self.checkTimestamps(self.key_time_list_critical)
         if self.key_list_critical is not None:
             failure += self.checkExists(self.key_list_critical)
         return failure
@@ -487,6 +556,19 @@ def parseArgs(args):
                         dest='key_value_list_critical', nargs='*',
                         help='''Same as -q but return critical if
                         equality check fails.''')
+    parser.add_argument('--key_time', dest='key_time_list', nargs='*',
+                        help='''Checks a Timestamp of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if the key is older
+                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        With at it return warning if the key is jounger
+                        than the value (ex.: @30s,@10m,@2h,@3d,...).
+                        With Minus you can shift the time in the future.''')
+    parser.add_argument('--key_time_critical',
+                        dest='key_time_list_critical', nargs='*',
+                        help='''Same as --key_time but return critical if
+                        Timestamp age fails.''')
     parser.add_argument('-u', '--key_equals_unknown',
                         dest='key_value_list_unknown', nargs='*',
                         help='''Same as -q but return unknown if
