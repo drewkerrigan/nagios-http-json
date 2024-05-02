@@ -357,7 +357,7 @@ class JsonRuleProcessor:
         elif unit == 'd':
             tiemduration = timedelta(days=duration)
         else:
-            return " Value (%s) is not a vaild timeduration." (r)
+            return " Value (%s) is not a vaild timeduration." % (r)
 
         if not self.helper.exists(key):
             return " Key (%s) for key %s not Exists." % \
