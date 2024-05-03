@@ -9,7 +9,7 @@ import ssl
 from pprint import pprint
 from urllib.error import HTTPError
 from urllib.error import URLError
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 plugin_description = \
 """
@@ -364,12 +364,12 @@ class JsonRuleProcessor:
                            (key, alias)
 
         try:
-            timestamp = datetime.fromisoformat(self.helper.get(key)).replace(tzinfo=None)
+            timestamp = datetime.fromisoformat(self.helper.get(key))
         except:
             return " Value (%s) for key %s is not a Date in ISO format." % \
                            (self.helper.get(key), alias)
         
-        now = datetime.now()
+        now = datetime.now(timezone.utc)
         age = now - timestamp
 
         if not negative:
