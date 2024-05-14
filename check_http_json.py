@@ -334,7 +334,7 @@ class JsonRuleProcessor:
             key, alias = _getKeyAlias(k)
             failure += self.checkThreshold(key, alias, r)
         return failure
-    
+
     def checkTimestamp(self, key, alias, r):
         failure = ''
         invert = False
@@ -368,7 +368,7 @@ class JsonRuleProcessor:
         except:
             return " Value (%s) for key %s is not a Date in ISO format." % \
                            (self.helper.get(key), alias)
-        
+
         now = datetime.now(timezone.utc)
         age = now - timestamp
 
