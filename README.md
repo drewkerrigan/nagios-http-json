@@ -38,7 +38,7 @@ Generic Nagios plugin which checks json values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
 
-Version: 2.1.2 (2022-09-15)
+Version: 2.2.0 (2024-05-14)
 
 optional arguments:
   -h, --help            show this help message and exit
