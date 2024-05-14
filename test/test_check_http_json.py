@@ -84,10 +84,10 @@ class UtilTest(unittest.TestCase):
         data = json.loads(jsondata)
         nagios = NagiosHelper()
         processor = JsonRuleProcessor(data, args)
-        nagios.append_warning(processor.checkWarning())
-        nagios.append_critical(processor.checkCritical())
+        nagios.append_message(WARNING_CODE, processor.checkWarning())
+        nagios.append_message(CRITICAL_CODE, processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
-        nagios.append_unknown(processor.checkUnknown())
+        nagios.append_message(UNKNOWN_CODE, processor.checkUnknown())
         self.assertEqual(code, nagios.getCode())
 
     def test_metrics(self):

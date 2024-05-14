@@ -6,7 +6,6 @@ import json
 import argparse
 import sys
 import ssl
-from pprint import pprint
 from urllib.error import HTTPError
 from urllib.error import URLError
 
@@ -69,20 +68,19 @@ class NagiosHelper:
             code = UNKNOWN_CODE
         return code
 
-    def append_warning(self, warning_message):
-        self.warning_message += warning_message
-
-    def append_critical(self, critical_message):
-        self.critical_message += critical_message
-
-    def append_unknown(self, unknown_message):
-        self.unknown_message += unknown_message
+    def append_message(self, code, msg):
+        if code > 2 or code < 0:
+            self.unknown_message += msg
+        if code == 1:
+            self.warning_message += msg
+        if code == 2:
+            self.critical_message += msg
 
     def append_metrics(self, metrics):
         (performance_data, warning_message, critical_message) = metrics
         self.performance_data += performance_data
-        self.append_warning(warning_message)
-        self.append_critical(critical_message)
+        self.append_message(WARNING_CODE, warning_message)
+        self.append_message(CRITICAL_CODE, critical_message)
 
 
 class JsonHelper:
@@ -423,6 +421,9 @@ def parseArgs(args):
 
     parser.add_argument('-d', '--debug', action='store_true',
                         help='debug mode')
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help='Verbose mode. Multiple -v options increase the verbosity')
+
     parser.add_argument('-s', '--ssl', action='store_true',
                         help='use TLS to connect to remote host')
     parser.add_argument('-H', '--host', dest='host',
@@ -444,6 +445,8 @@ def parseArgs(args):
     parser.add_argument('-p', '--path', dest='path', help='Path')
     parser.add_argument('-t', '--timeout', type=int,
                         help='Connection timeout (seconds)')
+    parser.add_argument('--unreachable-state', type=int, default=3,
+                        help='Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('-B', '--basic-auth', dest='auth',
                         help='Basic auth string "username:password"')
     parser.add_argument('-D', '--data', dest='data',
@@ -516,16 +519,92 @@ def parseArgs(args):
     return parser.parse_args(args)
 
 
-def debugPrint(debug_flag, message, pretty_flag=False):
+def debugPrint(debug_flag, message):
     """
-    Print debug messages if -d (debug_flat ) is set.
+    Print debug messages if -d is set.
     """
+    if not debug_flag:
+        return
 
-    if debug_flag:
-        if pretty_flag:
-            pprint(message)
-        else:
-            print(message)
+    print(message)
+
+def verbosePrint(verbose_flag, when, message):
+    """
+    Print verbose messages if -v is set.
+    Since -v can be used multiple times, the when parameter sets the required amount before printing
+    """
+    if not verbose_flag:
+        return
+    if verbose_flag >= when:
+        print(message)
+
+def prepare_context(args):
+    """
+    Prepare TLS Context
+    """
+    nagios = NagiosHelper()
+
+    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    context.options |= ssl.OP_NO_SSLv2
+    context.options |= ssl.OP_NO_SSLv3
+
+    if args.insecure:
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE
+    else:
+        context.verify_mode = ssl.CERT_OPTIONAL
+        context.load_default_certs()
+        if args.cacert:
+            try:
+                context.load_verify_locations(args.cacert)
+            except ssl.SSLError:
+                nagios.append_message(UNKNOWN_CODE, 'Error loading SSL CA cert "%s"!' % args.cacert)
+        if args.cert:
+            try:
+                context.load_cert_chain(args.cert, keyfile=args.key)
+            except ssl.SSLError:
+                if args.key:
+                    nagios.append_message(UNKNOWN_CODE, 'Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!' % (args.key, args.cert))
+                else:
+                    nagios.append_message(UNKNOWN_CODE, 'Error loading SSL cert. Make sure "%s" contains the key as well!' % (args.cert))
+
+    if nagios.getCode() != OK_CODE:
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
+
+    return context
+
+
+def make_request(args, url, context):
+    """
+    Performs the actual request to the given URL
+    """
+    req = urllib.request.Request(url, method=args.method)
+    req.add_header("User-Agent", "check_http_json")
+    if args.auth:
+        authbytes = str(args.auth).encode()
+        base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
+        req.add_header('Authorization', 'Basic %s' % base64str)
+    if args.headers:
+        headers = json.loads(args.headers)
+        debugPrint(args.debug, "Headers:\n %s" % headers)
+        for header in headers:
+            req.add_header(header, headers[header])
+    if args.timeout and args.data:
+        databytes = str(args.data).encode()
+        response = urllib.request.urlopen(req, timeout=args.timeout,
+                                          data=databytes, context=context)
+    elif args.timeout:
+        response = urllib.request.urlopen(req, timeout=args.timeout,
+                                          context=context)
+    elif args.data:
+        databytes = str(args.data).encode()
+        response = urllib.request.urlopen(req, data=databytes, context=context)
+    else:
+        # pylint: disable=consider-using-with
+        response = urllib.request.urlopen(req, context=context)
+
+    return response.read()
 
 
 def main(cliargs):
@@ -543,42 +622,7 @@ def main(cliargs):
 
     if args.ssl:
         url = "https://%s" % args.host
-
-        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
-        context.options |= ssl.OP_NO_SSLv2
-        context.options |= ssl.OP_NO_SSLv3
-
-        if args.insecure:
-            context.check_hostname = False
-            context.verify_mode = ssl.CERT_NONE
-        else:
-            context.verify_mode = ssl.CERT_OPTIONAL
-            context.load_default_certs()
-            if args.cacert:
-                try:
-                    context.load_verify_locations(args.cacert)
-                except ssl.SSLError:
-                    nagios.append_unknown(
-                        'Error loading SSL CA cert "%s"!'
-                        % args.cacert)
-
-            if args.cert:
-                try:
-                    context.load_cert_chain(args.cert, keyfile=args.key)
-                except ssl.SSLError:
-                    if args.key:
-                        nagios.append_unknown(
-                            'Error loading SSL cert. Make sure key "%s" belongs to cert "%s"!'
-                            % (args.key, args.cert))
-                    else:
-                        nagios.append_unknown(
-                            'Error loading SSL cert. Make sure "%s" contains the key as well!'
-                            % (args.cert))
-
-        if nagios.getCode() != OK_CODE:
-            print(nagios.getMessage())
-            sys.exit(nagios.getCode())
-
+        context = prepare_context(args)
     else:
         url = "http://%s" % args.host
     if args.port:
@@ -586,60 +630,37 @@ def main(cliargs):
     if args.path:
         url += "/%s" % args.path
 
-    debugPrint(args.debug, "url:%s" % url)
+    debugPrint(args.debug, "url: %s" % url)
     json_data = ''
 
     try:
-        req = urllib.request.Request(url, method=args.method)
-        req.add_header("User-Agent", "check_http_json")
-        if args.auth:
-            authbytes = str(args.auth).encode()
-            base64str = base64.encodebytes(authbytes).decode().replace('\n', '')
-            req.add_header('Authorization', 'Basic %s' % base64str)
-        if args.headers:
-            headers = json.loads(args.headers)
-            debugPrint(args.debug, "Headers:\n %s" % headers)
-            for header in headers:
-                req.add_header(header, headers[header])
-        if args.timeout and args.data:
-            databytes = str(args.data).encode()
-            response = urllib.request.urlopen(req, timeout=args.timeout,
-                                              data=databytes, context=context)
-        elif args.timeout:
-            response = urllib.request.urlopen(req, timeout=args.timeout,
-                                              context=context)
-        elif args.data:
-            databytes = str(args.data).encode()
-            response = urllib.request.urlopen(req, data=databytes, context=context)
-        else:
-            # pylint: disable=consider-using-with
-            response = urllib.request.urlopen(req, context=context)
-
-        json_data = response.read()
-
+        json_data = make_request(args, url, context)
     except HTTPError as e:
         # Try to recover from HTTP Error, if there is JSON in the response
         if "json" in e.info().get_content_subtype():
             json_data = e.read()
         else:
-            nagios.append_unknown(" HTTPError[%s], url:%s" % (str(e.code), url))
+            nagios.append_message(UNKNOWN_CODE, " Could not find JSON in HTTP body. HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
-        nagios.append_critical(" URLError[%s], url:%s" % (str(e.reason), url))
+        # Some users might prefer another exit code if the URL wasn't reached
+        exit_code = args.unreachable_state
+        nagios.append_message(exit_code, " URLError[%s], url:%s" % (str(e.reason), url))
+        # Since we don't got any data, we can simply exit
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
 
     try:
         data = json.loads(json_data)
     except ValueError as e:
-        nagios.append_unknown(" Parser error: %s" % str(e))
-
+        nagios.append_message(UNKNOWN_CODE, " JSON Parser error: %s" % str(e))
     else:
-        debugPrint(args.debug, 'json:')
-        debugPrint(args.debug, data, True)
+        verbosePrint(args.verbose, 1, json.dumps(data, indent=2))
         # Apply rules to returned JSON data
         processor = JsonRuleProcessor(data, args)
-        nagios.append_warning(processor.checkWarning())
-        nagios.append_critical(processor.checkCritical())
+        nagios.append_message(WARNING_CODE, processor.checkWarning())
+        nagios.append_message(CRITICAL_CODE, processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
-        nagios.append_unknown(processor.checkUnknown())
+        nagios.append_message(UNKNOWN_CODE, processor.checkUnknown())
 
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
