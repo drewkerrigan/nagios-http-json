@@ -28,6 +28,8 @@ class RulesHelper:
     key_threshold_critical = None
     key_value_list_critical = None
     key_value_list_not_critical = None
+    key_time_list = None
+    key_time_list_critical = None
     key_value_list_unknown = None
     key_list_critical = None
     metric_list = None
