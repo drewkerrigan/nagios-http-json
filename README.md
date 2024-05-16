@@ -40,9 +40,10 @@ that service.
 
 Version: 2.2.0 (2024-05-14)
 
-optional arguments:
+options:
   -h, --help            show this help message and exit
   -d, --debug           debug mode
+  -v, --verbose         Verbose mode. Multiple -v options increase the verbosity
   -s, --ssl             use TLS to connect to remote host
   -H HOST, --host HOST  remote host to query
   -k, --insecure        do not check server SSL certificate
@@ -56,61 +57,44 @@ optional arguments:
   -p PATH, --path PATH  Path
   -t TIMEOUT, --timeout TIMEOUT
                         Connection timeout (seconds)
+  --unreachable-state UNREACHABLE_STATE
+                        Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -D DATA, --data DATA  The http payload to send as a POST
   -A HEADERS, --headers HEADERS
                         The http headers in JSON format.
   -f SEPARATOR, --field_separator SEPARATOR
-                        JSON Field separator, defaults to "."; Select element
-                        in an array with "(" ")"
-  -F SEPARATOR, --value_separator SEPARATOR
-                        JSON Value separator, defaults to ":";
-  -w [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]], --warning [KEY_THRESHOLD_WARNING [KEY_THRESHOLD_WARNING ...]]
-                        Warning threshold for these values
-                        (key1[>alias],WarnRange key2[>alias],WarnRange).
-                        WarnRange is in the format [@]start:end, more
-                        information at nagios-plugins.org/doc/guidelines.html.
-  -c [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]], --critical [KEY_THRESHOLD_CRITICAL [KEY_THRESHOLD_CRITICAL ...]]
-                        Critical threshold for these values
-                        (key1[>alias],CriticalRange
-                        key2[>alias],CriticalRange. CriticalRange is in the
-                        format [@]start:end, more information at nagios-
-                        plugins.org/doc/guidelines.html.
-  -e [KEY_LIST [KEY_LIST ...]], --key_exists [KEY_LIST [KEY_LIST ...]]
-                        Checks existence of these keys to determine status.
-                        Return warning if key is not present.
-  -E [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]], --key_exists_critical [KEY_LIST_CRITICAL [KEY_LIST_CRITICAL ...]]
+                        JSON Field separator, defaults to "."; Select element in an array with "(" ")"
+  -F VALUE_SEPARATOR, --value_separator VALUE_SEPARATOR
+                        JSON Value separator, defaults to ":"
+  -w [KEY_THRESHOLD_WARNING ...], --warning [KEY_THRESHOLD_WARNING ...]
+                        Warning threshold for these values (key1[>alias],WarnRange key2[>alias],WarnRange). WarnRange is in the format
+                        [@]start:end, more information at nagios-plugins.org/doc/guidelines.html.
+  -c [KEY_THRESHOLD_CRITICAL ...], --critical [KEY_THRESHOLD_CRITICAL ...]
+                        Critical threshold for these values (key1[>alias],CriticalRange key2[>alias],CriticalRange. CriticalRange is in
+                        the format [@]start:end, more information at nagios-plugins.org/doc/guidelines.html.
+  -e [KEY_LIST ...], --key_exists [KEY_LIST ...]
+                        Checks existence of these keys to determine status. Return warning if key is not present.
+  -E [KEY_LIST_CRITICAL ...], --key_exists_critical [KEY_LIST_CRITICAL ...]
                         Same as -e but return critical if key is not present.
-  -q [KEY_VALUE_LIST [KEY_VALUE_LIST ...]], --key_equals [KEY_VALUE_LIST [KEY_VALUE_LIST ...]]
-                        Checks equality of these keys and values
-                        (key[>alias],value key2,value2) to determine status.
-                        Multiple key values can be delimited with colon
-                        (key,value1:value2). Return warning if equality check
-                        fails
-  -Q [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]], --key_equals_critical [KEY_VALUE_LIST_CRITICAL [KEY_VALUE_LIST_CRITICAL ...]]
-                        Same as -q but return critical if equality check
-                        fails.
-  -u [KEY_VALUE_LIST_UNKNOWN [KEY_VALUE_LIST_UNKNOWN ...]], --key_equals_unknown [KEY_VALUE_LIST_UNKNOWN [KEY_VALUE_LIST_UNKNOWN ...]]
+  -q [KEY_VALUE_LIST ...], --key_equals [KEY_VALUE_LIST ...]
+                        Checks equality of these keys and values (key[>alias],value key2,value2) to determine status. Multiple key values
+                        can be delimited with colon (key,value1:value2). Return warning if equality check fails
+  -Q [KEY_VALUE_LIST_CRITICAL ...], --key_equals_critical [KEY_VALUE_LIST_CRITICAL ...]
+                        Same as -q but return critical if equality check fails.
+  -u [KEY_VALUE_LIST_UNKNOWN ...], --key_equals_unknown [KEY_VALUE_LIST_UNKNOWN ...]
                         Same as -q but return unknown if equality check fails.
-  -y [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]], --key_not_equals [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]]
-                        Checks equality of these keys and values
-                        (key[>alias],value key2,value2) to determine status.
-                        Multiple key values can be delimited with colon
-                        (key,value1:value2). Return warning if equality check
-                        succeeds
-  -Y [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]], --key_not_equals_critical [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]]
-                        Same as -q but return critical if equality check
-                        succeeds.
-  -m [METRIC_LIST [METRIC_LIST ...]], --key_metric [METRIC_LIST [METRIC_LIST ...]]
-                        Gathers the values of these keys (key[>alias],
-                        UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
-                        Nagios performance data. More information about Range
-                        format and units of measure for nagios can be found at
-                        nagios-plugins.org/doc/guidelines.html Additional
-                        formats for this parameter are: (key[>alias]),
-                        (key[>alias],UnitOfMeasure),
-                        (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
+  -y [KEY_VALUE_LIST_NOT ...], --key_not_equals [KEY_VALUE_LIST_NOT ...]
+                        Checks equality of these keys and values (key[>alias],value key2,value2) to determine status. Multiple key values
+                        can be delimited with colon (key,value1:value2). Return warning if equality check succeeds
+  -Y [KEY_VALUE_LIST_NOT_CRITICAL ...], --key_not_equals_critical [KEY_VALUE_LIST_NOT_CRITICAL ...]
+                        Same as -q but return critical if equality check succeeds.
+  -m [METRIC_LIST ...], --key_metric [METRIC_LIST ...]
+                        Gathers the values of these keys (key[>alias], UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for Nagios
+                        performance data. More information about Range format and units of measure for nagios can be found at nagios-
+                        plugins.org/doc/guidelines.html Additional formats for this parameter are: (key[>alias]),
+                        (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
 ```
 
 ## Examples
