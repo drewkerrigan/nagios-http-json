@@ -9,6 +9,7 @@ import os
 sys.path.append('..')
 
 from check_http_json import debugPrint
+from check_http_json import verbosePrint
 
 
 class CLITest(unittest.TestCase):
@@ -31,10 +32,13 @@ class CLITest(unittest.TestCase):
             debugPrint(True, 'debug')
             mock_print.assert_called_once_with('debug')
 
-    def test_debugprint_pprint(self):
-        with mock.patch('check_http_json.pprint') as mock_pprint:
-            debugPrint(True, 'debug', True)
-            mock_pprint.assert_called_once_with('debug')
+    def test_verbose(self):
+        with mock.patch('builtins.print') as mock_print:
+            verbosePrint(0, 3, 'verbose')
+            mock_print.assert_not_called()
+
+            verbosePrint(3, 3, 'verbose')
+            mock_print.assert_called_once_with('verbose')
 
     def test_cli_without_params(self):
 

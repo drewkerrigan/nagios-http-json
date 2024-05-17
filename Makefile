@@ -1,9 +1,11 @@
 .PHONY: lint test coverage
 
+PYTHON_PATH?=python3
+
 lint:
-	python -m pylint check_http_json.py
+	$(PYTHON_PATH) -m pylint check_http_json.py
 test:
-	python -m unittest discover
+	$(PYTHON_PATH) -m unittest discover
 coverage:
-	python -m coverage run -m unittest discover
-	python -m coverage report -m --include check_http_json.py
+	$(PYTHON_PATH) -m coverage run -m unittest discover
+	$(PYTHON_PATH) -m coverage report -m --include check_http_json.py
