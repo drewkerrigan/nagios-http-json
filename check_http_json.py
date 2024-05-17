@@ -363,11 +363,15 @@ class JsonRuleProcessor:
 
         try:
             timestamp = datetime.fromisoformat(self.helper.get(key))
-        except:
-            return " Value (%s) for key %s is not a Date in ISO format." % \
-                           (self.helper.get(key), alias)
+        except ValueError as ve:
+            return " Value (%s) for key %s is not a Date in ISO format. %s" % \
+                           (self.helper.get(key), alias, ve)
 
         now = datetime.now(timezone.utc)
+
+        if timestamp.tzinfo == None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+
         age = now - timestamp
 
         if not negative:
