@@ -369,7 +369,7 @@ class JsonRuleProcessor:
 
         now = datetime.now(timezone.utc)
 
-        if timestamp.tzinfo == None:
+        if timestamp.tzinfo is None:
             timestamp = timestamp.replace(tzinfo=timezone.utc)
 
         age = now - timestamp
