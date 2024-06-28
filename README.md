@@ -83,6 +83,18 @@ options:
                         can be delimited with colon (key,value1:value2). Return warning if equality check fails
   -Q [KEY_VALUE_LIST_CRITICAL ...], --key_equals_critical [KEY_VALUE_LIST_CRITICAL ...]
                         Same as -q but return critical if equality check fails.
+  --key_time [KEY_TIME_LIST ...],
+                        Checks a Timestamp of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if the key is older
+                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        With at it return warning if the key is jounger
+                        than the value (ex.: @30s,@10m,@2h,@3d,...).
+                        With Minus you can shift the time in the future.
+  --key_time_critical [KEY_TIME_LIST_CRITICAL ...],
+                        Same as --key_time but return critical if
+                        Timestamp age fails.
   -u [KEY_VALUE_LIST_UNKNOWN ...], --key_equals_unknown [KEY_VALUE_LIST_UNKNOWN ...]
                         Same as -q but return unknown if equality check fails.
   -y [KEY_VALUE_LIST_NOT ...], --key_not_equals [KEY_VALUE_LIST_NOT ...]
@@ -187,6 +199,45 @@ options:
     * **Value is greater than or equal to 1000:** `@1000:`
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
+
+### Timestamp
+
+**Data**:
+
+    { "metric": "2020-01-01 10:10:00.000000+00:00" }
+
+#### Relevant Commands
+
+* **Warning:** `./check_http_json.py -H <host>:<port> -p <path> --key_time "metric,TIME"`
+* **Critical:** `./check_http_json.py -H <host>:<port> -p <path> --key_time_critical "metric,TIME"`
+
+#### TIME Definitions
+
+* **Format:** [@][-]TIME
+* **Generates a Warning or Critical if...**
+    * **Timestamp is more than 30 seconds in the past:** `30s`
+    * **Timestamp is more than 5 minutes in the past:** `5m`
+    * **Timestamp is more than 12 hours in the past:** `12h`
+    * **Timestamp is more than 2 days in the past:** `2d`
+    * **Timestamp is more than 30 minutes in the future:** `-30m`
+    * **Timestamp is not more than 30 minutes in the future:** `@-30m`
+    * **Timestamp is not more than 30 minutes in the past:** `@30m`
+
+##### Timestamp Format
+
+This plugin uses the Python function 'datetime.fromisoformat'.
+Since Python 3.11 any valid ISO 8601 format is supported, with the following exceptions:
+
+* Time zone offsets may have fractional seconds.
+* The T separator may be replaced by any single unicode character.
+* Fractional hours and minutes are not supported.
+* Reduced precision dates are not currently supported (YYYY-MM, YYYY).
+* Extended date representations are not currently supported (±YYYYYY-MM-DD).
+* Ordinal dates are not currently supported (YYYY-OOO).
+
+Before Python 3.11, this method only supported the format YYYY-MM-DD
+
+More info and examples the about Timestamp Format can be found at [https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat](https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat).
 
 #### Using Headers
 

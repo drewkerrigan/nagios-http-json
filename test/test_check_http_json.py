@@ -28,6 +28,8 @@ class RulesHelper:
     key_threshold_critical = None
     key_value_list_critical = None
     key_value_list_not_critical = None
+    key_time_list = None
+    key_time_list_critical = None
     key_value_list_unknown = None
     key_list_critical = None
     metric_list = None
@@ -71,7 +73,14 @@ class RulesHelper:
     def dash_c(self, data):
         self.key_threshold_critical = data
         return self
+    
+    def dash_dash_key_time(self, data):
+        self.key_time_list = data
+        return self
 
+    def dash_dash_key_time_critical(self, data):
+        self.key_time_list_critical = data
+        return self
 
 class UtilTest(unittest.TestCase):
     """
@@ -302,3 +311,140 @@ class UtilTest(unittest.TestCase):
         # This should throw an error
         data = '[]'
         self.check_data(rules.dash_q(['(*).update_status,warn_me']), data, CRITICAL_CODE)
+
+    def test_key_time(self):
+        if sys.version_info[1] >= 11:
+            # Test current timestamp.
+            now = datetime.now(timezone.utc)
+            data = "{\"timestamp\": \"%s\",\"timestamp2\": \"%s\"}" % (now, now)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30s', 'timestamp2,30s']), data, OK_CODE)
+            
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+
+            # Test 31 minute in the past.
+            data = "{\"timestamp\": \"%s\"}" % (now - timedelta(minutes=31))
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+
+            # Test two hours and one minute in the past.
+            data = "{\"timestamp\": \"%s\"}" % (now - timedelta(hours=2) - timedelta(minutes=1))
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+
+            # Test one day and one minute in the past.
+            data = "{\"timestamp\": \"%s\"}" % (now - timedelta(days=1) - timedelta(minutes=1))
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+
+            # Test two hours and one minute in the future.
+            data = "{\"timestamp\": \"%s\"}" % (now + timedelta(hours=2) + timedelta(minutes=1))
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+        else:
+            data = "{\"timestamp\": \"2020-01-01\"}"
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,2d']), data, CRITICAL_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-30m']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-1h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,-3h']), data, OK_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,-2d']), data, OK_CODE)
+
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-30m']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
+            self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
