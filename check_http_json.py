@@ -6,6 +6,7 @@ import json
 import argparse
 import sys
 import ssl
+import traceback
 from urllib.error import HTTPError
 from urllib.error import URLError
 from datetime import datetime, timedelta, timezone
@@ -720,6 +721,7 @@ def main(cliargs):
     json_data = ''
 
     try:
+        # Requesting the data from the URL
         json_data = make_request(args, url, context)
     except HTTPError as e:
         # Try to recover from HTTP Error, if there is JSON in the response
@@ -736,22 +738,28 @@ def main(cliargs):
         sys.exit(nagios.getCode())
 
     try:
+        # Loading the JSON data from the request
         data = json.loads(json_data)
     except ValueError as e:
+        debugPrint(args.debug, traceback.format_exc())
         nagios.append_message(UNKNOWN_CODE, " JSON Parser error: %s" % str(e))
     else:
         verbosePrint(args.verbose, 1, json.dumps(data, indent=2))
-        # Apply rules to returned JSON data
+
+    try:
+        # Applying rules to returned JSON data
         processor = JsonRuleProcessor(data, args)
         nagios.append_message(WARNING_CODE, processor.checkWarning())
         nagios.append_message(CRITICAL_CODE, processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
         nagios.append_message(UNKNOWN_CODE, processor.checkUnknown())
+    except Exception as e: # pylint: disable=broad-exception-caught
+        debugPrint(args.debug, traceback.format_exc())
+        nagios.append_message(UNKNOWN_CODE, " Rule Parser error: %s" % str(e))
 
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
     sys.exit(nagios.getCode())
-
 
 if __name__ == "__main__":
     # Program entry point
