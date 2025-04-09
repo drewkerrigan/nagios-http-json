@@ -4,15 +4,50 @@
 
 This is a generic plugin for Nagios which checks json values from a given HTTP endpoint against argument specified rules and determines the status and performance data for that service.
 
-## Links
+## Installation
 
-* [CLI Usage](#cli-usage)
-* [Examples](#examples)
-    * [Riak Stats](docs/RIAK.md)
-    * [Docker](docs/DOCKER.md)
-* [Nagios Installation](#nagios-installation)
+Requirements:
 
-## CLI Usage
+* Python 3.6+
+
+### Nagios
+
+Assuming a standard installation of Nagios, the plugin can be executed from the machine that Nagios is running on.
+
+```bash
+cp check_http_json.py /usr/local/nagios/libexec/plugins/check_http_json.py
+chmod +x /usr/local/nagios/libexec/plugins/check_http_json.py
+```
+
+Add the following service definition to your server config (`localhost.cfg`):
+
+```
+
+define service {
+        use                             local-service
+        host_name                       localhost
+        service_description             <command_description>
+        check_command                   <command_name>
+        }
+
+```
+
+Add the following command definition to your commands config (`commands.config`):
+
+```
+
+define command{
+        command_name    <command_name>
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
+        }
+
+```
+
+### Icinga2
+
+An example Icinga2 command definition can be found here: (`contrib/icinga2_check_command_definition.conf`)
+
+## Usage
 
 Executing `./check_http_json.py -h` will yield the following details:
 
@@ -258,50 +293,6 @@ More info and examples the about Timestamp Format can be found at [https://docs.
 #### Using Headers
 
 * `./check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"`
-
-## Nagios Installation
-
-### Requirements
-
-* Python 3.6+
-
-### Configuration
-
-Assuming a standard installation of Nagios, the plugin can be executed from the machine that Nagios is running on.
-
-```bash
-cp check_http_json.py /usr/local/nagios/libexec/plugins/check_http_json.py
-chmod +x /usr/local/nagios/libexec/plugins/check_http_json.py
-```
-
-Add the following service definition to your server config (`localhost.cfg`):
-
-```
-
-define service {
-        use                             local-service
-        host_name                       localhost
-        service_description             <command_description>
-        check_command                   <command_name>
-        }
-
-```
-
-Add the following command definition to your commands config (`commands.config`):
-
-```
-
-define command{
-        command_name    <command_name>
-        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
-        }
-
-```
-
-## Icinga2 configuration
-
-The Icinga2 command definition can be found here: (contrib/icinga2_check_command_definition.conf)
-
 
 ## License
 
