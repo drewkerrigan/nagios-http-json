@@ -1,0 +1,38 @@
+{
+  "service1": {
+    "status": true
+  },
+  "service2": {
+    "status": true,
+    "meta": {
+      "res": "PONG"
+    }
+  },
+  "service3": {
+    "status": true,
+    "meta": {
+      "took": 9,
+      "timed_out": false,
+      "_shards": {
+        "total": 0,
+        "successful": 0,
+        "skipped": 0,
+        "failed": 0
+      },
+      "hits": {
+        "total": {
+          "value": 10000,
+          "relation": "gte"
+        },
+        "max_score": null,
+        "hits": []
+      }
+    }
+  },
+  "service4": {
+    "status": true,
+    "meta": {
+      "status": "ok"
+    }
+  }
+}

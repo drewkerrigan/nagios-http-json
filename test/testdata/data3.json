@@ -1,0 +1,18 @@
+{
+  "company": {
+    "name": "Tech Corp",
+    "location": "San Francisco",
+    "employees": [
+      {
+        "name": "Alice",
+        "role": "Developer"
+      },
+      {
+        "name": "Bob",
+        "role": "Designer"
+      }
+    ]
+  },
+  "founded": 2010,
+  "industry": "Technology"
+}
