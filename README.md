@@ -144,6 +144,8 @@ options:
                         (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
 ```
 
+The check plugin respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY`.
+
 ## Examples
 
 ### Key Naming
