@@ -172,6 +172,22 @@ options:
         ]
     }
 
+
+**Data for multiple keys for an object** `-q capacity1.value,True capacity2.value,True capacity3.value,True`
+
+    {
+      "capacity1": {
+        "value": true
+      },
+      "capacity2": {
+        "value": true
+      },
+      "capacity3": {
+        "value": true
+      }
+    }
+
+
 ### Thresholds and Ranges
 
 **Data**:
