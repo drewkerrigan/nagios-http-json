@@ -520,7 +520,9 @@ def parseArgs(args):
     parser.add_argument('-t', '--timeout', type=int,
                         help='Connection timeout (seconds)')
     parser.add_argument('--unreachable-state', type=int, default=3,
-                        help='Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
+                        help='Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
+    parser.add_argument('--invalid-json-state', type=int, default=3,
+                        help='Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('-B', '--basic-auth', dest='auth',
                         help='Basic auth string "username:password"')
     parser.add_argument('-D', '--data', dest='data',
@@ -728,7 +730,8 @@ def main(cliargs):
         if "json" in e.info().get_content_subtype():
             json_data = e.read()
         else:
-            nagios.append_message(UNKNOWN_CODE, " Could not find JSON in HTTP body. HTTPError[%s], url:%s" % (str(e.code), url))
+            exit_code = args.invalid_json_state
+            nagios.append_message(exit_code, " Could not find JSON in HTTP body. HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
         # Some users might prefer another exit code if the URL wasn't reached
         exit_code = args.unreachable_state
@@ -741,8 +744,11 @@ def main(cliargs):
         # Loading the JSON data from the request
         data = json.loads(json_data)
     except ValueError as e:
+        exit_code = args.invalid_json_state
         debugPrint(args.debug, traceback.format_exc())
-        nagios.append_message(UNKNOWN_CODE, " JSON Parser error: %s" % str(e))
+        nagios.append_message(exit_code, " JSON Parser error: %s" % str(e))
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
     else:
         verbosePrint(args.verbose, 1, json.dumps(data, indent=2))
 
