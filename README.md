@@ -4,15 +4,50 @@
 
 This is a generic plugin for Nagios which checks json values from a given HTTP endpoint against argument specified rules and determines the status and performance data for that service.
 
-## Links
+## Installation
 
-* [CLI Usage](#cli-usage)
-* [Examples](#examples)
-    * [Riak Stats](docs/RIAK.md)
-    * [Docker](docs/DOCKER.md)
-* [Nagios Installation](#nagios-installation)
+Requirements:
 
-## CLI Usage
+* Python 3.6+
+
+### Nagios
+
+Assuming a standard installation of Nagios, the plugin can be executed from the machine that Nagios is running on.
+
+```bash
+cp check_http_json.py /usr/local/nagios/libexec/plugins/check_http_json.py
+chmod +x /usr/local/nagios/libexec/plugins/check_http_json.py
+```
+
+Add the following service definition to your server config (`localhost.cfg`):
+
+```
+
+define service {
+        use                             local-service
+        host_name                       localhost
+        service_description             <command_description>
+        check_command                   <command_name>
+        }
+
+```
+
+Add the following command definition to your commands config (`commands.config`):
+
+```
+
+define command{
+        command_name    <command_name>
+        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
+        }
+
+```
+
+### Icinga2
+
+An example Icinga2 command definition can be found here: (`contrib/icinga2_check_command_definition.conf`)
+
+## Usage
 
 Executing `./check_http_json.py -h` will yield the following details:
 
@@ -58,7 +93,9 @@ options:
   -t TIMEOUT, --timeout TIMEOUT
                         Connection timeout (seconds)
   --unreachable-state UNREACHABLE_STATE
-                        Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
+                        Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
+  --invalid-json-state INVALID_JSON_STATE
+                        Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -D DATA, --data DATA  The http payload to send as a POST
@@ -83,6 +120,18 @@ options:
                         can be delimited with colon (key,value1:value2). Return warning if equality check fails
   -Q [KEY_VALUE_LIST_CRITICAL ...], --key_equals_critical [KEY_VALUE_LIST_CRITICAL ...]
                         Same as -q but return critical if equality check fails.
+  --key_time [KEY_TIME_LIST ...],
+                        Checks a Timestamp of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if the key is older
+                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        With at it return warning if the key is jounger
+                        than the value (ex.: @30s,@10m,@2h,@3d,...).
+                        With Minus you can shift the time in the future.
+  --key_time_critical [KEY_TIME_LIST_CRITICAL ...],
+                        Same as --key_time but return critical if
+                        Timestamp age fails.
   -u [KEY_VALUE_LIST_UNKNOWN ...], --key_equals_unknown [KEY_VALUE_LIST_UNKNOWN ...]
                         Same as -q but return unknown if equality check fails.
   -y [KEY_VALUE_LIST_NOT ...], --key_not_equals [KEY_VALUE_LIST_NOT ...]
@@ -96,6 +145,8 @@ options:
                         plugins.org/doc/guidelines.html Additional formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
 ```
+
+The check plugin respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY`.
 
 ## Examples
 
@@ -160,6 +211,22 @@ options:
         ]
     }
 
+
+**Data for multiple keys for an object** `-q capacity1.value,True capacity2.value,True capacity3.value,True`
+
+    {
+      "capacity1": {
+        "value": true
+      },
+      "capacity2": {
+        "value": true
+      },
+      "capacity3": {
+        "value": true
+      }
+    }
+
+
 ### Thresholds and Ranges
 
 **Data**:
@@ -188,53 +255,48 @@ options:
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
 
+### Timestamp
+
+**Data**:
+
+    { "metric": "2020-01-01 10:10:00.000000+00:00" }
+
+#### Relevant Commands
+
+* **Warning:** `./check_http_json.py -H <host>:<port> -p <path> --key_time "metric,TIME"`
+* **Critical:** `./check_http_json.py -H <host>:<port> -p <path> --key_time_critical "metric,TIME"`
+
+#### TIME Definitions
+
+* **Format:** [@][-]TIME
+* **Generates a Warning or Critical if...**
+    * **Timestamp is more than 30 seconds in the past:** `30s`
+    * **Timestamp is more than 5 minutes in the past:** `5m`
+    * **Timestamp is more than 12 hours in the past:** `12h`
+    * **Timestamp is more than 2 days in the past:** `2d`
+    * **Timestamp is more than 30 minutes in the future:** `-30m`
+    * **Timestamp is not more than 30 minutes in the future:** `@-30m`
+    * **Timestamp is not more than 30 minutes in the past:** `@30m`
+
+##### Timestamp Format
+
+This plugin uses the Python function 'datetime.fromisoformat'.
+Since Python 3.11 any valid ISO 8601 format is supported, with the following exceptions:
+
+* Time zone offsets may have fractional seconds.
+* The T separator may be replaced by any single unicode character.
+* Fractional hours and minutes are not supported.
+* Reduced precision dates are not currently supported (YYYY-MM, YYYY).
+* Extended date representations are not currently supported (±YYYYYY-MM-DD).
+* Ordinal dates are not currently supported (YYYY-OOO).
+
+Before Python 3.11, this method only supported the format YYYY-MM-DD
+
+More info and examples the about Timestamp Format can be found at [https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat](https://docs.python.org/3/library/datetime.html#datetime.datetime.fromisoformat).
+
 #### Using Headers
 
 * `./check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"`
-
-## Nagios Installation
-
-### Requirements
-
-* Python 3.6+
-
-### Configuration
-
-Assuming a standard installation of Nagios, the plugin can be executed from the machine that Nagios is running on.
-
-```bash
-cp check_http_json.py /usr/local/nagios/libexec/plugins/check_http_json.py
-chmod +x /usr/local/nagios/libexec/plugins/check_http_json.py
-```
-
-Add the following service definition to your server config (`localhost.cfg`):
-
-```
-
-define service {
-        use                             local-service
-        host_name                       localhost
-        service_description             <command_description>
-        check_command                   <command_name>
-        }
-
-```
-
-Add the following command definition to your commands config (`commands.config`):
-
-```
-
-define command{
-        command_name    <command_name>
-        command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
-        }
-
-```
-
-## Icinga2 configuration
-
-The Icinga2 command definition can be found here: (contrib/icinga2_check_command_definition.conf)
-
 
 ## License
 

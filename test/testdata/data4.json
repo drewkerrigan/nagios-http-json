@@ -1,0 +1,13 @@
+{
+  "id": 123,
+  "active": true,
+  "tags": ["tech", "startup", "innovation"],
+  "details": {
+    "website": "https://example.com",
+    "contact": {
+      "email": "info@example.com",
+      "phone": "+1-234-567-890"
+    }
+  },
+  "ratings": [4.5, 4.7, 4.8]
+}

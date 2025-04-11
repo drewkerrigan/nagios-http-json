@@ -6,8 +6,10 @@ import json
 import argparse
 import sys
 import ssl
+import traceback
 from urllib.error import HTTPError
 from urllib.error import URLError
+from datetime import datetime, timedelta, timezone
 
 plugin_description = \
 """
@@ -23,8 +25,8 @@ WARNING_CODE = 1
 CRITICAL_CODE = 2
 UNKNOWN_CODE = 3
 
-__version__ = '2.2.0'
-__version_date__ = '2024-05-14'
+__version__ = '2.3.0'
+__version_date__ = '2025-04-11'
 
 class NagiosHelper:
     """
@@ -234,11 +236,13 @@ class JsonRuleProcessor:
         self.key_value_list = self.expandKeys(self.rules.key_value_list)
         self.key_value_list_not = self.expandKeys(
             self.rules.key_value_list_not)
+        self.key_time_list = self.expandKeys(self.rules.key_time_list)
         self.key_list = self.expandKeys(self.rules.key_list)
         self.key_value_list_critical = self.expandKeys(
             self.rules.key_value_list_critical)
         self.key_value_list_not_critical = self.expandKeys(
             self.rules.key_value_list_not_critical)
+        self.key_time_list_critical = self.expandKeys(self.rules.key_time_list_critical)
         self.key_list_critical = self.expandKeys(self.rules.key_list_critical)
         self.key_value_list_unknown = self.expandKeys(
             self.rules.key_value_list_unknown)
@@ -330,6 +334,72 @@ class JsonRuleProcessor:
             failure += self.checkThreshold(key, alias, r)
         return failure
 
+    def checkTimestamp(self, key, alias, r):
+        failure = ''
+        invert = False
+        negative = False
+        if r.startswith('@'):
+            invert = True
+            r = r[1:]
+        if r.startswith('-'):
+            negative = True
+            r = r[1:]
+        duration = int(r[:-1])
+        unit = r[-1]
+
+        if unit == 's':
+            tiemduration = timedelta(seconds=duration)
+        elif unit == 'm':
+            tiemduration = timedelta(minutes=duration)
+        elif unit == 'h':
+            tiemduration = timedelta(hours=duration)
+        elif unit == 'd':
+            tiemduration = timedelta(days=duration)
+        else:
+            return " Value (%s) is not a vaild timeduration." % (r)
+
+        if not self.helper.exists(key):
+            return " Key (%s) for key %s not Exists." % \
+                           (key, alias)
+
+        try:
+            timestamp = datetime.fromisoformat(self.helper.get(key))
+        except ValueError as ve:
+            return " Value (%s) for key %s is not a Date in ISO format. %s" % \
+                           (self.helper.get(key), alias, ve)
+
+        now = datetime.now(timezone.utc)
+
+        if timestamp.tzinfo is None:
+            timestamp = timestamp.replace(tzinfo=timezone.utc)
+
+        age = now - timestamp
+
+        if not negative:
+            if age > tiemduration and not invert:
+                failure += " Value (%s) for key %s is older than now-%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+            if not age > tiemduration and invert:
+                failure += " Value (%s) for key %s is newer than now-%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+        else:
+            if age < -tiemduration and not invert:
+                failure += " Value (%s) for key %s is newer than now+%s%s." % \
+                           (self.helper.get(key), alias, duration, unit)
+            if not age < -tiemduration and invert:
+                failure += " Value (%s) for key %s is older than now+%s%s.." % \
+                           (self.helper.get(key), alias, duration, unit)
+
+        return failure
+
+    def checkTimestamps(self, threshold_list):
+        failure = ''
+        for threshold in threshold_list:
+            k, r = threshold.split(',')
+            key, alias = _getKeyAlias(k)
+            failure += self.checkTimestamp(key, alias, r)
+        return failure
+
     def checkWarning(self):
         failure = ''
         if self.key_threshold_warning is not None:
@@ -338,6 +408,8 @@ class JsonRuleProcessor:
             failure += self.checkEquality(self.key_value_list)
         if self.key_value_list_not is not None:
             failure += self.checkNonEquality(self.key_value_list_not)
+        if self.key_time_list is not None:
+            failure += self.checkTimestamps(self.key_time_list)
         if self.key_list is not None:
             failure += self.checkExists(self.key_list)
         return failure
@@ -352,6 +424,8 @@ class JsonRuleProcessor:
             failure += self.checkEquality(self.key_value_list_critical)
         if self.key_value_list_not_critical is not None:
             failure += self.checkNonEquality(self.key_value_list_not_critical)
+        if self.key_time_list_critical is not None:
+            failure += self.checkTimestamps(self.key_time_list_critical)
         if self.key_list_critical is not None:
             failure += self.checkExists(self.key_list_critical)
         return failure
@@ -446,7 +520,9 @@ def parseArgs(args):
     parser.add_argument('-t', '--timeout', type=int,
                         help='Connection timeout (seconds)')
     parser.add_argument('--unreachable-state', type=int, default=3,
-                        help='Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
+                        help='Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
+    parser.add_argument('--invalid-json-state', type=int, default=3,
+                        help='Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('-B', '--basic-auth', dest='auth',
                         help='Basic auth string "username:password"')
     parser.add_argument('-D', '--data', dest='data',
@@ -490,6 +566,19 @@ def parseArgs(args):
                         dest='key_value_list_critical', nargs='*',
                         help='''Same as -q but return critical if
                         equality check fails.''')
+    parser.add_argument('--key_time', dest='key_time_list', nargs='*',
+                        help='''Checks a Timestamp of these keys and values
+                        (key[>alias],value key2,value2) to determine status.
+                        Multiple key values can be delimited with colon
+                        (key,value1:value2). Return warning if the key is older
+                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        With at it return warning if the key is jounger
+                        than the value (ex.: @30s,@10m,@2h,@3d,...).
+                        With Minus you can shift the time in the future.''')
+    parser.add_argument('--key_time_critical',
+                        dest='key_time_list_critical', nargs='*',
+                        help='''Same as --key_time but return critical if
+                        Timestamp age fails.''')
     parser.add_argument('-u', '--key_equals_unknown',
                         dest='key_value_list_unknown', nargs='*',
                         help='''Same as -q but return unknown if
@@ -634,13 +723,15 @@ def main(cliargs):
     json_data = ''
 
     try:
+        # Requesting the data from the URL
         json_data = make_request(args, url, context)
     except HTTPError as e:
         # Try to recover from HTTP Error, if there is JSON in the response
         if "json" in e.info().get_content_subtype():
             json_data = e.read()
         else:
-            nagios.append_message(UNKNOWN_CODE, " Could not find JSON in HTTP body. HTTPError[%s], url:%s" % (str(e.code), url))
+            exit_code = args.invalid_json_state
+            nagios.append_message(exit_code, " Could not find JSON in HTTP body. HTTPError[%s], url:%s" % (str(e.code), url))
     except URLError as e:
         # Some users might prefer another exit code if the URL wasn't reached
         exit_code = args.unreachable_state
@@ -650,22 +741,31 @@ def main(cliargs):
         sys.exit(nagios.getCode())
 
     try:
+        # Loading the JSON data from the request
         data = json.loads(json_data)
     except ValueError as e:
-        nagios.append_message(UNKNOWN_CODE, " JSON Parser error: %s" % str(e))
+        exit_code = args.invalid_json_state
+        debugPrint(args.debug, traceback.format_exc())
+        nagios.append_message(exit_code, " JSON Parser error: %s" % str(e))
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
     else:
         verbosePrint(args.verbose, 1, json.dumps(data, indent=2))
-        # Apply rules to returned JSON data
+
+    try:
+        # Applying rules to returned JSON data
         processor = JsonRuleProcessor(data, args)
         nagios.append_message(WARNING_CODE, processor.checkWarning())
         nagios.append_message(CRITICAL_CODE, processor.checkCritical())
         nagios.append_metrics(processor.checkMetrics())
         nagios.append_message(UNKNOWN_CODE, processor.checkUnknown())
+    except Exception as e: # pylint: disable=broad-exception-caught
+        debugPrint(args.debug, traceback.format_exc())
+        nagios.append_message(UNKNOWN_CODE, " Rule Parser error: %s" % str(e))
 
     # Print Nagios specific string and exit appropriately
     print(nagios.getMessage())
     sys.exit(nagios.getCode())
-
 
 if __name__ == "__main__":
     # Program entry point
