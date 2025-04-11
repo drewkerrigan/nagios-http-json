@@ -1,6 +1,11 @@
 name: CI
 
-on: [push, pull_request]
+on:
+  push:
+    branches: [main, master]
+    tags:
+      - v*
+  pull_request:
 
 jobs:
   gitHubActionForPytest:
@@ -11,7 +16,7 @@ jobs:
     name: GitHub Action
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: Install dependencies
       run: |
         python -m pip install -r requirements-dev.txt
