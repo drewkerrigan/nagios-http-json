@@ -45,7 +45,7 @@ OK: Status OK.
 python check_http_json.py -H localhost:8080 -p data3.json -q "company.employees.(0).role,Dev"
 WARNING: Status WARNING. Key company.employees.(0).role mismatch. Dev != Developer
 
-python check_http_json.py -H localhost:8080 -p data3.json -q "company.employees.(0).role,Developer" "company.employees.(1).role,Designer" 
+python check_http_json.py -H localhost:8080 -p data3.json -q "company.employees.(0).role,Developer" "company.employees.(1).role,Designer"
 OK: Status OK.
 ```
 
@@ -60,4 +60,6 @@ UNKNOWN: Status UNKNOWN. Key ratings(0) mismatch. 4.1 != 4.5
 ```bash
 python check_http_json.py -H localhost:8080 -p data5.json -q service1.status,True service2.status,True service3.status,True
 OK: Status OK.
+
+python check_http_json.py -H localhost:8080 -p data5.json -q "service1.status,True" -q "service2.status,True" -q "service3.status,False"
 ```
