@@ -93,7 +93,9 @@ options:
   -t TIMEOUT, --timeout TIMEOUT
                         Connection timeout (seconds)
   --unreachable-state UNREACHABLE_STATE
-                        Exit with specified code if URL unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
+                        Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
+  --invalid-json-state INVALID_JSON_STATE
+                        Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
   -D DATA, --data DATA  The http payload to send as a POST
