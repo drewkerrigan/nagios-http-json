@@ -8,7 +8,7 @@ This is a generic plugin for Nagios which checks json values from a given HTTP e
 
 Requirements:
 
-* Python 3.6+
+* Python 3.8+
 
 ### Nagios
 
