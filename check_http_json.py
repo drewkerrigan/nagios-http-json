@@ -529,6 +529,7 @@ def parseArgs(args):
                         help='The http payload to send as a POST')
     parser.add_argument('-A', '--headers', dest='headers',
                         help='The http headers in JSON format.')
+    parser.add_argument('--base64', metavar='PATH', help='JSON path to base64 encoded content (dot notation, e.g., data.content)')
     parser.add_argument('-f', '--field_separator', dest='separator',
                         help='''JSON Field separator, defaults to ".";
                         Select element in an array with "(" ")"''')
@@ -741,8 +742,21 @@ def main(cliargs):
         sys.exit(nagios.getCode())
 
     try:
-        # Loading the JSON data from the request
-        data = json.loads(json_data)
+        if args.base64:
+            # Parse the HTTP response (json_data) as JSON into a Python dictionary
+            data = json.loads(json_data)
+            # Split the --base64 argument (dot notation) into a list of keys for nested access
+            path = args.base64.split('.')
+            # Traverse the dictionary to reach the nested base64-encoded string
+            for key in path:
+                data = data[key]
+            # Decode the base64 string to get the original JSON string
+            decoded = base64.b64decode(data)
+            # Parse the decoded JSON string into a Python dictionary
+            data = json.loads(decoded)
+        else:
+            # If --base64 is not set, just parse the HTTP response as JSON
+            data = json.loads(json_data)
     except ValueError as e:
         exit_code = args.invalid_json_state
         debugPrint(args.debug, traceback.format_exc())
