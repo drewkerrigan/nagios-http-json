@@ -551,19 +551,21 @@ def parseArgs(args):
     parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*',
                         help='''Checks existence of these keys to determine
                         status. Return warning if key is not present.''')
-    parser.add_argument('-E', '--key_exists_critical',
-                        dest='key_list_critical',
+    parser.add_argument('-E', '--key_exists_critical', dest='key_list_critical',
                         nargs='*',
                         help='''Same as -e but return critical if key is
                         not present.''')
-    parser.add_argument('-q', '--key_equals', dest='key_value_list', nargs='*',
+    parser.add_argument('-q', '--key_equals', dest='key_value_list',
+                        action='extend',
+                        nargs='*',
                         help='''Checks equality of these keys and values
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
                         (key,value1:value2). Return warning if equality
                         check fails''')
-    parser.add_argument('-Q', '--key_equals_critical',
-                        dest='key_value_list_critical', nargs='*',
+    parser.add_argument('-Q', '--key_equals_critical', dest='key_value_list_critical',
+                        action='extend',
+                        nargs='*',
                         help='''Same as -q but return critical if
                         equality check fails.''')
     parser.add_argument('--key_time', dest='key_time_list', nargs='*',
@@ -571,7 +573,7 @@ def parseArgs(args):
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
                         (key,value1:value2). Return warning if the key is older
-                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        than the value (ex.: 30s,10m,2h,3d,...).
                         With at it return warning if the key is jounger
                         than the value (ex.: @30s,@10m,@2h,@3d,...).
                         With Minus you can shift the time in the future.''')
@@ -594,7 +596,9 @@ def parseArgs(args):
                         dest='key_value_list_not_critical', nargs='*',
                         help='''Same as -q but return critical if equality
                         check succeeds.''')
-    parser.add_argument('-m', '--key_metric', dest='metric_list', nargs='*',
+    parser.add_argument('-m', '--key_metric', dest='metric_list',
+                        action='extend',
+                        nargs='*',
                         help='''Gathers the values of these keys (key[>alias],
                         UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
                         Nagios performance data. More information about Range
