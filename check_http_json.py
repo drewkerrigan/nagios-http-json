@@ -699,7 +699,7 @@ def make_request(args, url, context):
         else:
             # pylint: disable=consider-using-with
             response = urllib.request.urlopen(req, context=context)
-    
+
         return response.read()
 
     except socket.timeout:
