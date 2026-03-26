@@ -6,6 +6,7 @@ import json
 import argparse
 import sys
 import ssl
+import socket
 import traceback
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -683,21 +684,29 @@ def make_request(args, url, context):
         debugPrint(args.debug, "Headers:\n %s" % headers)
         for header in headers:
             req.add_header(header, headers[header])
-    if args.timeout and args.data:
-        databytes = str(args.data).encode()
-        response = urllib.request.urlopen(req, timeout=args.timeout,
-                                          data=databytes, context=context)
-    elif args.timeout:
-        response = urllib.request.urlopen(req, timeout=args.timeout,
-                                          context=context)
-    elif args.data:
-        databytes = str(args.data).encode()
-        response = urllib.request.urlopen(req, data=databytes, context=context)
-    else:
-        # pylint: disable=consider-using-with
-        response = urllib.request.urlopen(req, context=context)
 
-    return response.read()
+    try:
+        if args.timeout and args.data:
+            databytes = str(args.data).encode()
+            response = urllib.request.urlopen(req, timeout=args.timeout,
+                                              data=databytes, context=context)
+        elif args.timeout:
+            response = urllib.request.urlopen(req, timeout=args.timeout,
+                                              context=context)
+        elif args.data:
+            databytes = str(args.data).encode()
+            response = urllib.request.urlopen(req, data=databytes, context=context)
+        else:
+            # pylint: disable=consider-using-with
+            response = urllib.request.urlopen(req, context=context)
+    
+        return response.read()
+
+    except socket.timeout:
+        nagios = NagiosHelper()
+        nagios.append_message(args.unreachable_state, " Socket timeout after %ss | %s" % (args.timeout or 'default', url))
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
 
 
 def main(cliargs):
