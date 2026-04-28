@@ -234,6 +234,40 @@ class UtilTest(unittest.TestCase):
         self.check_data(RulesHelper().dash_c(['(*).value,@1:5']),
                         '[{"value": 5},{"value": 1000}]', CRITICAL_CODE)
 
+    def test_metrics_value_mapping(self):
+        data = json.loads('{"status": "Up"}')
+        expected = ("'status'=0 ", '', '')
+
+        processor = JsonRuleProcessor(data, parseArgs(['-H', 'foobar', '-m', 'status', '-M', 'Up=0']))
+        actual = processor.checkMetrics()
+
+        self.assertEqual(actual, expected)
+
+        data = json.loads('{"status": "Down"}')
+        expected = ("'status'=1 ", '', '')
+
+        processor = JsonRuleProcessor(data, parseArgs(['-H', 'foobar', '-m', 'status', '-M', 'Up=0', '-M', 'Down=1']))
+        actual = processor.checkMetrics()
+
+        self.assertEqual(actual, expected)
+
+    def test_metrics_value_mapping_datatypes(self):
+        data = json.loads('{"status": "123"}')
+        expected = ("'status'=foo ", '', '')
+        # Test with string value as target
+        processor = JsonRuleProcessor(data, parseArgs(['-H', 'foobar', '-m', 'status', '-M', '123=foo']))
+        actual = processor.checkMetrics()
+
+        self.assertEqual(actual, expected)
+
+        data = json.loads('{"status": 123}')
+        expected = ("'status'=foo ", '', '')
+        # Test with string value as source and target
+        processor = JsonRuleProcessor(data, parseArgs(['-H', 'foobar', '-m', 'status', '-M', '123=foo']))
+        actual = processor.checkMetrics()
+
+        self.assertEqual(actual, expected)
+
     def test_separator(self):
         rules = RulesHelper()
         rules.separator = '_'
