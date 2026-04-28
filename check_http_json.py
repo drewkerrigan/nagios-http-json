@@ -441,10 +441,12 @@ class JsonRuleProcessor:
         Return a Nagios specific performance metrics string given keys
         and parameter definitions
         """
-
         metrics = ''
         warning = ''
         critical = ''
+
+        kv = dict(self.rules.metric_value_mapping) if hasattr(self.rules, 'metric_value_mapping') else {}
+
         if self.metric_list is not None:
             for metric in self.metric_list:
                 key = metric
@@ -461,7 +463,10 @@ class JsonRuleProcessor:
                             minimum, maximum = vals
                 key, alias = _getKeyAlias(key)
                 if self.helper.exists(key):
-                    metrics += "'%s'=%s" % (alias, self.helper.get(key))
+                    value = self.helper.get(key)
+                    # Apply the value mapping if it exists
+                    v = kv.get(str(value), value)
+                    metrics += "'%s'=%s" % (alias, v)
                     if uom:
                         metrics += uom
                     if warn_range is not None:
@@ -480,7 +485,6 @@ class JsonRuleProcessor:
                         metrics += ";%s" % maximum
                 metrics += ' '
         return ("%s" % metrics, warning, critical)
-
 
 def parseArgs(args):
     """
@@ -608,9 +612,25 @@ def parseArgs(args):
                         (key[>alias]), (key[>alias],UnitOfMeasure),
                         (key[>alias],UnitOfMeasure,WarnRange,
                         CriticalRange).''')
+    parser.add_argument('-M', dest='metric_value_mapping', metavar="KEY=VALUE",
+                        type=key_value_pair,
+                        action="append",
+                        default=[],
+                        help='''Map the values of the gathered metric to the given values.
+                        This can be used to map non-numeric values to numeric values, e.g. -M Up=1. Can used multiple times.
+                        This flag is meant to be used with the -m flag.''')
 
     return parser.parse_args(args)
 
+
+def key_value_pair(value):
+    """
+    Small helper to split key=value arguments into a tuple.
+    """
+    parts = value.split('=', 1)
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError('invalid format %s. Expected key=value' % (value))
+    return (parts[0], parts[1])
 
 def debugPrint(debug_flag, message):
     """

@@ -66,14 +66,13 @@ usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
                           [-y [KEY_VALUE_LIST_NOT [KEY_VALUE_LIST_NOT ...]]]
                           [-Y [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]]
+                          [-M KEY=VALUE]
 
 Check HTTP JSON Nagios Plugin
 
 Generic Nagios plugin which checks json values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
-
-Version: 2.2.0 (2024-05-14)
 
 options:
   -h, --help            show this help message and exit
@@ -125,7 +124,7 @@ options:
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
                         (key,value1:value2). Return warning if the key is older
-                        than the value (ex.: 30s,10m,2h,3d,...). 
+                        than the value (ex.: 30s,10m,2h,3d,...).
                         With at it return warning if the key is jounger
                         than the value (ex.: @30s,@10m,@2h,@3d,...).
                         With Minus you can shift the time in the future.
@@ -144,6 +143,8 @@ options:
                         performance data. More information about Range format and units of measure for nagios can be found at nagios-
                         plugins.org/doc/guidelines.html Additional formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
+  -M KEY=VALUE          Map the values of the gathered metric to the given values. This can be used to map non-numeric values to numeric values, e.g. -M
+                        Up=1. Can used multiple times. This flag is meant to be used with the -m flag.
 ```
 
 The check plugin respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY`.
@@ -254,6 +255,28 @@ The check plugin respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY`.
     * **Value is greater than or equal to 1000:** `@1000:`
 
 More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
+
+### Performance Data Metrics
+
+The `-m` and `-M` flags can be used to generate performance data from the JSON data.
+
+```
+check_http_json.py -H host.internal --path example-data.json -e 'service.requests' -m 'service.requests'
+OK: 'service.requests'=12  Status OK. |'service.requests'=12
+
+check_http_json.py -H host.internal --path example-data.json -e 'service.requests' -m 'service.requests>webshopRequests,c'
+OK: 'webshopRequests'=12c  Status OK. |'webshopRequests'=12c
+```
+
+The `-M` flag can be used to map non-numeric values to numeric values.
+
+```
+check_http_json.py -H host.internal --path example-data.json -e 'service.status' -m 'service.status'
+OK: 'service.status'=Up  Status OK. |'service.requests'=Up
+
+check_http_json.py -H host.internal --path example-data.json -e 'service.status' -m 'service.status' -M Up=1
+OK: 'service.status'=1  Status OK. |'service.requests'=1
+```
 
 ### Timestamp
 

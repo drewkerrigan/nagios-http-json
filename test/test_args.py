@@ -32,3 +32,7 @@ class ArgsTest(unittest.TestCase):
         parser = parseArgs(['-H', 'foobar', '-f', '_', '-F', '_'])
         self.assertEqual(parser.separator, '_')
         self.assertEqual(parser.value_separator, '_')
+
+    def test_parser_with_value_mapping(self):
+        parser = parseArgs(['-H', 'foobar', '-M', 'key=value'])
+        self.assertEqual(parser.metric_value_mapping, [('key', 'value')])
