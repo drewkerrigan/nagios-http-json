@@ -15,7 +15,7 @@ plugin_description = \
 """
 Check HTTP JSON Nagios Plugin
 
-Generic Nagios plugin which checks json values from a given endpoint against
+Generic check plugin which checks JSON values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
 """
@@ -470,14 +470,14 @@ def parseArgs(args):
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    parser.add_argument('-d', '--debug', action='store_true', help='debug mode')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
     parser.add_argument('-v', '--verbose', action='count', default=0, help='Verbose mode. Multiple -v options increase the verbosity')
-    parser.add_argument('-s', '--ssl', action='store_true', help='use TLS to connect to remote host')
-    parser.add_argument('-H', '--host', dest='host', required=not ('-V' in args or '--version' in args), help='remote host to query')
-    parser.add_argument('-k', '--insecure', action='store_true', help='do not check server SSL certificate')
+    parser.add_argument('-s', '--ssl', action='store_true', help='Use TLS to connect to remote host')
+    parser.add_argument('-H', '--host', dest='host', required=not ('-V' in args or '--version' in args), help='Remote host to query')
+    parser.add_argument('-k', '--insecure', action='store_true', help='Do not check server SSL certificate')
     parser.add_argument('-X', '--request', dest='method', default='GET', choices=['GET', 'POST'],
                         help='Specifies a custom request method to use when communicating  with  the HTTP server')
-    parser.add_argument('-V', '--version', action='store_true', help='print version of this plugin')
+    parser.add_argument('-V', '--version', action='store_true', help='Print version of this plugin')
     parser.add_argument('--cacert', dest='cacert', help='SSL CA certificate')
     parser.add_argument('--cert', dest='cert', help='SSL client certificate')
     parser.add_argument('--key', dest='key', help='SSL client key ( if not bundled into the cert )')
@@ -489,8 +489,8 @@ def parseArgs(args):
     parser.add_argument('--invalid-json-state', type=int, default=3,
                         help='Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('-B', '--basic-auth', dest='auth', help='Basic auth string "username:password"')
-    parser.add_argument('-D', '--data', dest='data', help='The http payload to send as a POST')
-    parser.add_argument('-A', '--headers', dest='headers', help='The http headers in JSON format.')
+    parser.add_argument('-D', '--data', dest='data', help='The HTTP payload to send as a POST')
+    parser.add_argument('-A', '--headers', dest='headers', help='The HTTP headers in JSON format.')
     parser.add_argument('-f', '--field_separator', dest='separator',
                         help='''JSON Field separator, defaults to "."; Select element in an array with "(" ")"''')
     parser.add_argument('-F', '--value_separator', dest='value_separator', help='''JSON Value separator, defaults to ":"''')
@@ -541,7 +541,7 @@ def parseArgs(args):
                         help='''Gathers the values of these keys (key[>alias],
                         UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
                         Nagios performance data. More information about Range
-                        format and units of measure for nagios can be found at
+                        format and units of measure for Nagios can be found at
                         nagios-plugins.org/doc/guidelines.html
                         Additional formats for this parameter are:
                         (key[>alias]), (key[>alias],UnitOfMeasure),
