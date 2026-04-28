@@ -1,8 +1,8 @@
 ![CI](https://github.com/drewkerrigan/nagios-http-json/workflows/CI/badge.svg)
 
-# Nagios Json Plugin
+# Nagios JSON Plugin
 
-This is a generic plugin for Nagios which checks json values from a given HTTP endpoint against argument specified rules and determines the status and performance data for that service.
+This is a generic plugin for Nagios which checks JSON values from a given HTTP endpoint against argument specified rules and determines the status and performance data for that service.
 
 ## Installation
 
@@ -43,13 +43,13 @@ define command{
 
 ```
 
-### Icinga2
+### Icinga
 
-An example Icinga2 command definition can be found here: (`contrib/icinga2_check_command_definition.conf`)
+An example Icinga command definition can be found here: (`contrib/icinga2_check_command_definition.conf`)
 
 ## Usage
 
-Executing `./check_http_json.py -h` will yield the following details:
+Executing `check_http_json.py -h` will yield the following details:
 
 ```
 usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
@@ -70,20 +70,20 @@ usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
 
 Check HTTP JSON Nagios Plugin
 
-Generic Nagios plugin which checks json values from a given endpoint against
+Generic Nagios plugin which checks JSON values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
 
 options:
-  -h, --help            show this help message and exit
-  -d, --debug           debug mode
+  -h, --help            Show this help message and exit
+  -d, --debug           Debug mode
   -v, --verbose         Verbose mode. Multiple -v options increase the verbosity
   -s, --ssl             use TLS to connect to remote host
-  -H HOST, --host HOST  remote host to query
-  -k, --insecure        do not check server SSL certificate
+  -H HOST, --host HOST  Remote host to query
+  -k, --insecure        Do not check server SSL certificate
   -X {GET,POST}, --request {GET,POST}
                         Specifies a custom request method to use when communicating with the HTTP server
-  -V, --version         print version of this plugin
+  -V, --version         Print version of this plugin
   --cacert CACERT       SSL CA certificate
   --cert CERT           SSL client certificate
   --key KEY             SSL client key ( if not bundled into the cert )
@@ -97,9 +97,9 @@ options:
                         Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)
   -B AUTH, --basic-auth AUTH
                         Basic auth string "username:password"
-  -D DATA, --data DATA  The http payload to send as a POST
+  -D DATA, --data DATA  The HTTP payload to send as a POST
   -A HEADERS, --headers HEADERS
-                        The http headers in JSON format.
+                        The HTTP headers in JSON format.
   -f SEPARATOR, --field_separator SEPARATOR
                         JSON Field separator, defaults to "."; Select element in an array with "(" ")"
   -F VALUE_SEPARATOR, --value_separator VALUE_SEPARATOR
@@ -140,7 +140,7 @@ options:
                         Same as -q but return critical if equality check succeeds.
   -m [METRIC_LIST ...], --key_metric [METRIC_LIST ...]
                         Gathers the values of these keys (key[>alias], UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for Nagios
-                        performance data. More information about Range format and units of measure for nagios can be found at nagios-
+                        performance data. More information about Range format and units of measure for Nagios can be found at nagios-
                         plugins.org/doc/guidelines.html Additional formats for this parameter are: (key[>alias]),
                         (key[>alias],UnitOfMeasure), (key[>alias],UnitOfMeasure,WarnRange, CriticalRange).
   -M KEY=VALUE          Map the values of the gathered metric to the given values. This can be used to map non-numeric values to numeric values, e.g. -M
@@ -155,94 +155,125 @@ The check plugin respects the environment variables `HTTP_PROXY`, `HTTPS_PROXY`.
 
 **Data for key** `value`:
 
-    { "value": 1000 }
+```json
+{ "value": 1000 }
+```
 
 **Data for key** `capacity.value`:
 
+```json
+{
+    "capacity": {
+        "value": 1000
+    }
+}
+```
+
+**Data for key** `(0).capacity.value`:
+
+```json
+[
     {
         "capacity": {
             "value": 1000
         }
     }
-
-**Data for key** `(0).capacity.value`:
-
-    [
-        {
-            "capacity": {
-                "value": 1000
-            }
-        }
-    ]
+]
+```
 
 **Data for keys of all items in a list** `(*).capacity.value`:
 
-    [
-        {
-            "capacity": {
-                "value": 1000
-            }
-        },
-        {
-            "capacity": {
-                "value": 2200
-            }
+```json
+[
+    {
+        "capacity": {
+            "value": 1000
         }
-    ]
+    },
+    {
+        "capacity": {
+            "value": 2200
+        }
+    }
+]
+```
 
 **Data for separator** `-f _` **and key** `(0)_gauges_jvm.buffers.direct.capacity_value`:
 
-    [
-        {
-            "gauges": {
-                "jvm.buffers.direct.capacity":
-                    "value": 1000
-                }
+```json
+[
+    {
+      "gauges": {
+            "jvm.buffers.direct.capacity": {
+                "value": 1000
             }
         }
-    ]
+    }
+]
+```
 
 **Data for keys** `ring_members(0)`, `ring_members(1)`, `ring_members(2)`:
 
-    {
-        "ring_members": [
-            "riak1@127.0.0.1",
-            "riak2@127.0.0.1",
-            "riak3@127.0.0.1"
-        ]
-    }
-
+```json
+{
+    "ring_members": [
+        "riak1@127.0.0.1",
+        "riak2@127.0.0.1",
+        "riak3@127.0.0.1"
+    ]
+}
+```
 
 **Data for multiple keys for an object** `-q capacity1.value,True capacity2.value,True capacity3.value,True`
 
-    {
-      "capacity1": {
-        "value": true
-      },
-      "capacity2": {
-        "value": true
-      },
-      "capacity3": {
-        "value": true
-      }
-    }
-
+```json
+{
+  "capacity1": {
+    "value": true
+  },
+  "capacity2": {
+    "value": true
+  },
+  "capacity3": {
+    "value": true
+  }
+}
+```
 
 ### Thresholds and Ranges
 
 **Data**:
 
-    { "metric": 1000 }
+```json
+{ "metric": 1000 }
+```
 
 #### Relevant Commands
 
-* **Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
-* **Critical:** `./check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"`
-* **Metrics with Warning:** `./check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"`
-* **Metrics with Critical:**
+**Warning:**
 
-        ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
-        ./check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
+```bash
+check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"
+```
+
+**Critical:**
+
+```bash
+check_http_json.py -H <host>:<port> -p <path> -c "metric,RANGE"
+```
+
+**Metrics with Warning:**
+
+```bash
+check_http_json.py -H <host>:<port> -p <path> -w "metric,RANGE"
+```
+
+**Metrics with Critical:**
+
+```bash
+check_http_json.py -H <host>:<port> -p <path> -w "metric,,,RANGE"
+check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
+```
 
 #### Range Definitions
 
@@ -260,7 +291,7 @@ More info about Nagios Range format and Units of Measure can be found at [https:
 
 The `-m` and `-M` flags can be used to generate performance data from the JSON data.
 
-```
+```bash
 check_http_json.py -H host.internal --path example-data.json -e 'service.requests' -m 'service.requests'
 OK: 'service.requests'=12  Status OK. |'service.requests'=12
 
@@ -270,7 +301,7 @@ OK: 'webshopRequests'=12c  Status OK. |'webshopRequests'=12c
 
 The `-M` flag can be used to map non-numeric values to numeric values.
 
-```
+```bash
 check_http_json.py -H host.internal --path example-data.json -e 'service.status' -m 'service.status'
 OK: 'service.status'=Up  Status OK. |'service.requests'=Up
 
@@ -282,12 +313,23 @@ OK: 'service.status'=1  Status OK. |'service.requests'=1
 
 **Data**:
 
-    { "metric": "2020-01-01 10:10:00.000000+00:00" }
+```json
+{ "metric": "2020-01-01 10:10:00.000000+00:00" }
+```
 
 #### Relevant Commands
 
-* **Warning:** `./check_http_json.py -H <host>:<port> -p <path> --key_time "metric,TIME"`
-* **Critical:** `./check_http_json.py -H <host>:<port> -p <path> --key_time_critical "metric,TIME"`
+**Warning:**
+
+```bash
+check_http_json.py -H <host>:<port> -p <path> --key_time "metric,TIME"
+```
+
+**Critical:**
+
+```bash
+check_http_json.py -H <host>:<port> -p <path> --key_time_critical "metric,TIME"
+```
 
 #### TIME Definitions
 
@@ -319,7 +361,9 @@ More info and examples the about Timestamp Format can be found at [https://docs.
 
 #### Using Headers
 
-* `./check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"`
+```
+check_http_json.py -H <host>:<port> -p <path> -A '{"content-type": "application/json"}' -w "metric,RANGE"
+```
 
 ## License
 
