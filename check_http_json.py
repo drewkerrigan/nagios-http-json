@@ -518,7 +518,7 @@ def parseArgs(args):
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
     parser.add_argument('-p', '--path', dest='path', help='Path')
     parser.add_argument('-t', '--timeout', type=int,
-                        help='Connection timeout (seconds)')
+                        help='Connection timeout (seconds)', default=10)
     parser.add_argument('--unreachable-state', type=int, default=3,
                         help='Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('--invalid-json-state', type=int, default=3,
@@ -683,19 +683,19 @@ def make_request(args, url, context):
         debugPrint(args.debug, "Headers:\n %s" % headers)
         for header in headers:
             req.add_header(header, headers[header])
-    if args.timeout and args.data:
-        databytes = str(args.data).encode()
-        response = urllib.request.urlopen(req, timeout=args.timeout,
-                                          data=databytes, context=context)
-    elif args.timeout:
-        response = urllib.request.urlopen(req, timeout=args.timeout,
-                                          context=context)
-    elif args.data:
-        databytes = str(args.data).encode()
-        response = urllib.request.urlopen(req, data=databytes, context=context)
-    else:
-        # pylint: disable=consider-using-with
-        response = urllib.request.urlopen(req, context=context)
+
+    try:
+        if args.data:
+            databytes = str(args.data).encode()
+            response = urllib.request.urlopen(req, data=databytes, timeout=args.timeout, context=context)
+        else:
+            # pylint: disable=consider-using-with
+            response = urllib.request.urlopen(req, timeout=args.timeout, context=context)
+    except TimeoutError:
+        nagios = NagiosHelper()
+        nagios.append_message(args.unreachable_state, "  %s socket timeout after %s seconds" % (url, args.timeout))
+        print(nagios.getMessage())
+        sys.exit(nagios.getCode())
 
     return response.read()
 
