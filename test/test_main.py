@@ -129,3 +129,16 @@ class MainTest(unittest.TestCase):
 
         self.assertTrue('Error loading SSL CA' in str(mock_print.call_args))
         self.assertEqual(test.exception.code, 3)
+
+    @mock.patch('builtins.print')
+    @mock.patch('urllib.request.urlopen')
+    def test_main_with_timeout(self, mock_request, mock_print):
+        args = ['-H', 'localhost']
+
+        mock_request.side_effect = TimeoutError('timeout')
+
+        with self.assertRaises(SystemExit) as test:
+            main(args)
+
+        self.assertTrue('timeout' in str(mock_print.call_args))
+        self.assertEqual(test.exception.code, 3)
