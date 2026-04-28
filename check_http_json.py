@@ -15,7 +15,7 @@ plugin_description = \
 """
 Check HTTP JSON Nagios Plugin
 
-Generic Nagios plugin which checks json values from a given endpoint against
+Generic check plugin which checks JSON values from a given endpoint against
 argument specified rules and determines the status and performance data for
 that service.
 """
@@ -71,6 +71,8 @@ class NagiosHelper:
         return code
 
     def append_message(self, code, msg):
+        # Just to be sure that the | char is not included
+        msg = msg.replace('|', ' ')
         if code > 2 or code < 0:
             self.unknown_message += msg
         if code == 1:
@@ -108,8 +110,7 @@ class JsonHelper:
 
     def getSubArrayElement(self, key, data):
         subElemKey = key[:key.find(self.arrayOpener)]
-        index = int(key[key.find(self.arrayOpener) +
-                        1:key.find(self.arrayCloser)])
+        index = int(key[key.find(self.arrayOpener) + 1:key.find(self.arrayCloser)])
         remainingKey = key[key.find(self.arrayCloser + self.separator) + 2:]
 
         if key.find(self.arrayCloser + self.separator) == -1:
@@ -128,8 +129,7 @@ class JsonHelper:
                 return (None, 'not_found')
 
     def equals(self, key, value):
-        return self.exists(key) and \
-            str(self.get(key)) in value.split(self.value_separator)
+        return self.exists(key) and str(self.get(key)) in value.split(self.value_separator)
 
     def lte(self, key, value):
         return self.exists(key) and float(self.get(key)) <= float(value)
@@ -151,15 +151,13 @@ class JsonHelper:
         Can navigate nested json keys with a dot format
         (Element.Key.NestedKey). Returns (None, 'not_found') if not found
         """
-
         if temp_data != '':
             data = temp_data
         else:
             data = self.data
         if len(key) <= 0:
             return data
-        if key.find(self.separator) != -1 and \
-           key.find(self.arrayOpener) != -1:
+        if key.find(self.separator) != -1 and key.find(self.arrayOpener) != -1:
             if key.find(self.separator) < key.find(self.arrayOpener):
                 return self.getSubElement(key, data)
             else:
@@ -229,23 +227,17 @@ class JsonRuleProcessor:
         debugPrint(rules_args.debug, "separator: %s" % separator)
         debugPrint(rules_args.debug, "value_separator: %s" % value_separator)
         self.metric_list = self.expandKeys(self.rules.metric_list)
-        self.key_threshold_warning = self.expandKeys(
-            self.rules.key_threshold_warning)
-        self.key_threshold_critical = self.expandKeys(
-            self.rules.key_threshold_critical)
+        self.key_threshold_warning = self.expandKeys(self.rules.key_threshold_warning)
+        self.key_threshold_critical = self.expandKeys(self.rules.key_threshold_critical)
         self.key_value_list = self.expandKeys(self.rules.key_value_list)
-        self.key_value_list_not = self.expandKeys(
-            self.rules.key_value_list_not)
+        self.key_value_list_not = self.expandKeys(self.rules.key_value_list_not)
         self.key_time_list = self.expandKeys(self.rules.key_time_list)
         self.key_list = self.expandKeys(self.rules.key_list)
-        self.key_value_list_critical = self.expandKeys(
-            self.rules.key_value_list_critical)
-        self.key_value_list_not_critical = self.expandKeys(
-            self.rules.key_value_list_not_critical)
+        self.key_value_list_critical = self.expandKeys(self.rules.key_value_list_critical)
+        self.key_value_list_not_critical = self.expandKeys(self.rules.key_value_list_not_critical)
         self.key_time_list_critical = self.expandKeys(self.rules.key_time_list_critical)
         self.key_list_critical = self.expandKeys(self.rules.key_list_critical)
-        self.key_value_list_unknown = self.expandKeys(
-            self.rules.key_value_list_unknown)
+        self.key_value_list_unknown = self.expandKeys(self.rules.key_value_list_unknown)
 
     def expandKeys(self, src):
         if src is None:
@@ -271,8 +263,7 @@ class JsonRuleProcessor:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
             if not self.helper.equals(key, v):
-                failure += " Key %s mismatch. %s != %s" % (alias, v,
-                                                           self.helper.get(key))
+                failure += " Key %s mismatch. %s != %s" % (alias, v, self.helper.get(key))
         return failure
 
     def checkNonEquality(self, equality_list):
@@ -281,8 +272,7 @@ class JsonRuleProcessor:
             k, v = kv.split(',')
             key, alias = _getKeyAlias(k)
             if self.helper.equals(key, v):
-                failure += " Key %s match found. %s == %s" % (alias, v,
-                                                              self.helper.get(key))
+                failure += " Key %s match found. %s == %s" % (alias, v, self.helper.get(key))
         return failure
 
     def checkThreshold(self, key, alias, r):
@@ -302,27 +292,19 @@ class JsonRuleProcessor:
                 end = vals[1]
         if(start == '~'):
             if (invert and self.helper.lte(key, end)):
-                failure += " Value (%s) for key %s was less than or equal to %s." % \
-                           (self.helper.get(key), alias, end)
+                failure += " Value (%s) for key %s was less than or equal to %s." % (self.helper.get(key), alias, end)
             elif (not invert and self.helper.gt(key, end)):
-                failure += " Value (%s) for key %s was greater than %s." % \
-                           (self.helper.get(key), alias, end)
+                failure += " Value (%s) for key %s was greater than %s." % (self.helper.get(key), alias, end)
         elif(end == 'infinity'):
             if (invert and self.helper.gte(key, start)):
-                failure += " Value (%s) for key %s was greater than or equal to %s." % \
-                           (self.helper.get(key), alias, start)
+                failure += " Value (%s) for key %s was greater than or equal to %s." % (self.helper.get(key), alias, start)
             elif (not invert and self.helper.lt(key, start)):
-                failure += " Value (%s) for key %s was less than %s." % \
-                           (self.helper.get(key), alias, start)
+                failure += " Value (%s) for key %s was less than %s." % (self.helper.get(key), alias, start)
         else:
-            if (invert and self.helper.gte(key, start) and
-                    self.helper.lte(key, end)):
-                failure += " Value (%s) for key %s was inside the range %s:%s." % \
-                           (self.helper.get(key), alias, start, end)
-            elif (not invert and (self.helper.lt(key, start) or
-                                  self.helper.gt(key, end))):
-                failure += " Value (%s) for key %s was outside the range %s:%s." % \
-                           (self.helper.get(key), alias, start, end)
+            if (invert and self.helper.gte(key, start) and self.helper.lte(key, end)):
+                failure += " Value (%s) for key %s was inside the range %s:%s." % (self.helper.get(key), alias, start, end)
+            elif (not invert and (self.helper.lt(key, start) or self.helper.gt(key, end))):
+                failure += " Value (%s) for key %s was outside the range %s:%s." % (self.helper.get(key), alias, start, end)
 
         return failure
 
@@ -359,14 +341,12 @@ class JsonRuleProcessor:
             return " Value (%s) is not a vaild timeduration." % (r)
 
         if not self.helper.exists(key):
-            return " Key (%s) for key %s not Exists." % \
-                           (key, alias)
+            return " Key (%s) for key %s not Exists." % (key, alias)
 
         try:
             timestamp = datetime.fromisoformat(self.helper.get(key))
         except ValueError as ve:
-            return " Value (%s) for key %s is not a Date in ISO format. %s" % \
-                           (self.helper.get(key), alias, ve)
+            return " Value (%s) for key %s is not a Date in ISO format. %s" % (self.helper.get(key), alias, ve)
 
         now = datetime.now(timezone.utc)
 
@@ -377,18 +357,14 @@ class JsonRuleProcessor:
 
         if not negative:
             if age > tiemduration and not invert:
-                failure += " Value (%s) for key %s is older than now-%s%s." % \
-                           (self.helper.get(key), alias, duration, unit)
+                failure += " Value (%s) for key %s is older than now-%s%s." % (self.helper.get(key), alias, duration, unit)
             if not age > tiemduration and invert:
-                failure += " Value (%s) for key %s is newer than now-%s%s." % \
-                           (self.helper.get(key), alias, duration, unit)
+                failure += " Value (%s) for key %s is newer than now-%s%s." % (self.helper.get(key), alias, duration, unit)
         else:
             if age < -tiemduration and not invert:
-                failure += " Value (%s) for key %s is newer than now+%s%s." % \
-                           (self.helper.get(key), alias, duration, unit)
+                failure += " Value (%s) for key %s is newer than now+%s%s." % (self.helper.get(key), alias, duration, unit)
             if not age < -tiemduration and invert:
-                failure += " Value (%s) for key %s is older than now+%s%s.." % \
-                           (self.helper.get(key), alias, duration, unit)
+                failure += " Value (%s) for key %s is older than now+%s%s.." % (self.helper.get(key), alias, duration, unit)
 
         return failure
 
@@ -459,8 +435,7 @@ class JsonRuleProcessor:
                     if len(vals) == 4:
                         key, uom, warn_range, crit_range = vals
                     if len(vals) == 6:
-                        key, uom, warn_range, crit_range, \
-                            minimum, maximum = vals
+                        key, uom, warn_range, crit_range, minimum, maximum = vals
                 key, alias = _getKeyAlias(key)
                 if self.helper.exists(key):
                     value = self.helper.get(key)
@@ -476,12 +451,10 @@ class JsonRuleProcessor:
                         critical += self.checkThreshold(key, alias, crit_range)
                         metrics += ";%s" % crit_range
                     if minimum is not None:
-                        critical += self.checkThreshold(key, alias, minimum +
-                                                        ':')
+                        critical += self.checkThreshold(key, alias, minimum + ':')
                         metrics += ";%s" % minimum
                     if maximum is not None:
-                        critical += self.checkThreshold(key, alias, '~:' +
-                                                        maximum)
+                        critical += self.checkThreshold(key, alias, '~:' + maximum)
                         metrics += ";%s" % maximum
                 metrics += ' '
         return ("%s" % metrics, warning, critical)
@@ -497,81 +470,52 @@ def parseArgs(args):
         formatter_class=argparse.RawDescriptionHelpFormatter
     )
 
-    parser.add_argument('-d', '--debug', action='store_true',
-                        help='debug mode')
-    parser.add_argument('-v', '--verbose', action='count', default=0,
-                        help='Verbose mode. Multiple -v options increase the verbosity')
-
-    parser.add_argument('-s', '--ssl', action='store_true',
-                        help='use TLS to connect to remote host')
-    parser.add_argument('-H', '--host', dest='host',
-                        required=not ('-V' in args or '--version' in args),
-                        help='remote host to query')
-    parser.add_argument('-k', '--insecure', action='store_true',
-                        help='do not check server SSL certificate')
+    parser.add_argument('-d', '--debug', action='store_true', help='Debug mode')
+    parser.add_argument('-v', '--verbose', action='count', default=0, help='Verbose mode. Multiple -v options increase the verbosity')
+    parser.add_argument('-s', '--ssl', action='store_true', help='Use TLS to connect to remote host')
+    parser.add_argument('-H', '--host', dest='host', required=not ('-V' in args or '--version' in args), help='Remote host to query')
+    parser.add_argument('-k', '--insecure', action='store_true', help='Do not check server SSL certificate')
     parser.add_argument('-X', '--request', dest='method', default='GET', choices=['GET', 'POST'],
                         help='Specifies a custom request method to use when communicating  with  the HTTP server')
-    parser.add_argument('-V', '--version', action='store_true',
-                        help='print version of this plugin')
-    parser.add_argument('--cacert',
-                        dest='cacert', help='SSL CA certificate')
-    parser.add_argument('--cert',
-                        dest='cert', help='SSL client certificate')
-    parser.add_argument('--key', dest='key',
-                        help='SSL client key ( if not bundled into the cert )')
+    parser.add_argument('-V', '--version', action='store_true', help='Print version of this plugin')
+    parser.add_argument('--cacert', dest='cacert', help='SSL CA certificate')
+    parser.add_argument('--cert', dest='cert', help='SSL client certificate')
+    parser.add_argument('--key', dest='key', help='SSL client key ( if not bundled into the cert )')
     parser.add_argument('-P', '--port', dest='port', help='TCP port')
     parser.add_argument('-p', '--path', dest='path', help='Path')
-    parser.add_argument('-t', '--timeout', type=int,
-                        help='Connection timeout (seconds)', default=10)
+    parser.add_argument('-t', '--timeout', type=int, help='Connection timeout (seconds)', default=10)
     parser.add_argument('--unreachable-state', type=int, default=3,
                         help='Exit with specified code when the URL is unreachable. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
     parser.add_argument('--invalid-json-state', type=int, default=3,
                         help='Exit with specified code when no valid JSON is returned. Examples: 1 for Warning, 2 for Critical, 3 for Unknown (default: 3)')
-    parser.add_argument('-B', '--basic-auth', dest='auth',
-                        help='Basic auth string "username:password"')
-    parser.add_argument('-D', '--data', dest='data',
-                        help='The http payload to send as a POST')
-    parser.add_argument('-A', '--headers', dest='headers',
-                        help='The http headers in JSON format.')
+    parser.add_argument('-B', '--basic-auth', dest='auth', help='Basic auth string "username:password"')
+    parser.add_argument('-D', '--data', dest='data', help='The HTTP payload to send as a POST')
+    parser.add_argument('-A', '--headers', dest='headers', help='The HTTP headers in JSON format.')
     parser.add_argument('-f', '--field_separator', dest='separator',
-                        help='''JSON Field separator, defaults to ".";
-                        Select element in an array with "(" ")"''')
-    parser.add_argument('-F', '--value_separator', dest='value_separator',
-                        help='''JSON Value separator, defaults to ":"''')
-    parser.add_argument('-w', '--warning', dest='key_threshold_warning',
-                        nargs='*',
-                        help='''Warning threshold for these values
+                        help='''JSON Field separator, defaults to "."; Select element in an array with "(" ")"''')
+    parser.add_argument('-F', '--value_separator', dest='value_separator', help='''JSON Value separator, defaults to ":"''')
+    parser.add_argument('-w', '--warning', dest='key_threshold_warning', nargs='*', help='''Warning threshold for these values
                         (key1[>alias],WarnRange key2[>alias],WarnRange).
                         WarnRange is in the format [@]start:end, more
                         information at
                         nagios-plugins.org/doc/guidelines.html.''')
-    parser.add_argument('-c', '--critical', dest='key_threshold_critical',
-                        nargs='*',
+    parser.add_argument('-c', '--critical', dest='key_threshold_critical', nargs='*',
                         help='''Critical threshold for these values
                         (key1[>alias],CriticalRange key2[>alias],CriticalRange.
                         CriticalRange is in the format [@]start:end, more
                         information at
                         nagios-plugins.org/doc/guidelines.html.''')
-    parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*',
-                        help='''Checks existence of these keys to determine
+    parser.add_argument('-e', '--key_exists', dest='key_list', nargs='*', help='''Checks existence of these keys to determine
                         status. Return warning if key is not present.''')
-    parser.add_argument('-E', '--key_exists_critical', dest='key_list_critical',
-                        nargs='*',
-                        help='''Same as -e but return critical if key is
-                        not present.''')
-    parser.add_argument('-q', '--key_equals', dest='key_value_list',
-                        action='extend',
-                        nargs='*',
+    parser.add_argument('-E', '--key_exists_critical', dest='key_list_critical', nargs='*', help='Same as -e but return critical if key is not present.')
+    parser.add_argument('-q', '--key_equals', dest='key_value_list', action='extend', nargs='*',
                         help='''Checks equality of these keys and values
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
                         (key,value1:value2). Return warning if equality
                         check fails''')
-    parser.add_argument('-Q', '--key_equals_critical', dest='key_value_list_critical',
-                        action='extend',
-                        nargs='*',
-                        help='''Same as -q but return critical if
-                        equality check fails.''')
+    parser.add_argument('-Q', '--key_equals_critical', dest='key_value_list_critical', action='extend', nargs='*',
+                        help='Same as -q but return critical if equality check fails.')
     parser.add_argument('--key_time', dest='key_time_list', nargs='*',
                         help='''Checks a Timestamp of these keys and values
                         (key[>alias],value key2,value2) to determine status.
@@ -581,41 +525,29 @@ def parseArgs(args):
                         With at it return warning if the key is jounger
                         than the value (ex.: @30s,@10m,@2h,@3d,...).
                         With Minus you can shift the time in the future.''')
-    parser.add_argument('--key_time_critical',
-                        dest='key_time_list_critical', nargs='*',
-                        help='''Same as --key_time but return critical if
-                        Timestamp age fails.''')
-    parser.add_argument('-u', '--key_equals_unknown',
-                        dest='key_value_list_unknown', nargs='*',
-                        help='''Same as -q but return unknown if
-                        equality check fails.''')
-    parser.add_argument('-y', '--key_not_equals',
-                        dest='key_value_list_not', nargs='*',
+    parser.add_argument('--key_time_critical', dest='key_time_list_critical', nargs='*',
+                        help='Same as --key_time but return critical if timestamp age fails.')
+    parser.add_argument('-u', '--key_equals_unknown', dest='key_value_list_unknown', nargs='*',
+                        help='Same as -q but return unknown if equality check fails.')
+    parser.add_argument('-y', '--key_not_equals', dest='key_value_list_not', nargs='*',
                         help='''Checks equality of these keys and values
                         (key[>alias],value key2,value2) to determine status.
                         Multiple key values can be delimited with colon
                         (key,value1:value2). Return warning if equality
                         check succeeds''')
-    parser.add_argument('-Y', '--key_not_equals_critical',
-                        dest='key_value_list_not_critical', nargs='*',
-                        help='''Same as -q but return critical if equality
-                        check succeeds.''')
-    parser.add_argument('-m', '--key_metric', dest='metric_list',
-                        action='extend',
-                        nargs='*',
+    parser.add_argument('-Y', '--key_not_equals_critical', dest='key_value_list_not_critical', nargs='*',
+                        help='Same as -q but return critical if equality check succeeds.')
+    parser.add_argument('-m', '--key_metric', dest='metric_list', action='extend', nargs='*',
                         help='''Gathers the values of these keys (key[>alias],
                         UnitOfMeasure,WarnRange,CriticalRange,Min,Max) for
                         Nagios performance data. More information about Range
-                        format and units of measure for nagios can be found at
+                        format and units of measure for Nagios can be found at
                         nagios-plugins.org/doc/guidelines.html
                         Additional formats for this parameter are:
                         (key[>alias]), (key[>alias],UnitOfMeasure),
                         (key[>alias],UnitOfMeasure,WarnRange,
                         CriticalRange).''')
-    parser.add_argument('-M', dest='metric_value_mapping', metavar="KEY=VALUE",
-                        type=key_value_pair,
-                        action="append",
-                        default=[],
+    parser.add_argument('-M', dest='metric_value_mapping', metavar="KEY=VALUE", type=key_value_pair, action="append", default=[],
                         help='''Map the values of the gathered metric to the given values.
                         This can be used to map non-numeric values to numeric values, e.g. -M Up=1. Can used multiple times.
                         This flag is meant to be used with the -m flag.''')
