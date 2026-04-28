@@ -49,3 +49,9 @@ class NagiosHelperTest(unittest.TestCase):
         helper = NagiosHelper()
         helper.performance_data = 'foobar'
         self.assertEqual('OK: foobar Status OK. |foobar', helper.getMessage())
+
+    def test_getmessage_with_perfdata_separator(self):
+
+        helper = NagiosHelper()
+        helper.append_message(1, 'exa|mple')
+        self.assertEqual('WARNING: Status WARNING. exa mple', helper.getMessage())

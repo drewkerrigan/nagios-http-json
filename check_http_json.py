@@ -71,6 +71,8 @@ class NagiosHelper:
         return code
 
     def append_message(self, code, msg):
+        # Just to be sure that the | char is not included
+        msg = msg.replace('|', ' ')
         if code > 2 or code < 0:
             self.unknown_message += msg
         if code == 1:
