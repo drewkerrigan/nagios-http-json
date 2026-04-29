@@ -353,7 +353,7 @@ class UtilTest(unittest.TestCase):
             data = "{\"timestamp\": \"%s\",\"timestamp2\": \"%s\"}" % (now, now)
 
             self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30s', 'timestamp2,30s']), data, OK_CODE)
-            
+
             self.check_data(RulesHelper().dash_dash_key_time(['timestamp,30m']), data, OK_CODE)
             self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,1h']), data, OK_CODE)
             self.check_data(RulesHelper().dash_dash_key_time(['timestamp,3h']), data, OK_CODE)
@@ -482,3 +482,26 @@ class UtilTest(unittest.TestCase):
             self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-1h']), data, CRITICAL_CODE)
             self.check_data(RulesHelper().dash_dash_key_time(['timestamp,@-3h']), data, WARNING_CODE)
             self.check_data(RulesHelper().dash_dash_key_time_critical(['timestamp,@-2d']), data, CRITICAL_CODE)
+
+    def test_bracket_in_key(self):
+        """
+        https://github.com/drewkerrigan/nagios-http-json/issues/76
+        """
+
+        rules = RulesHelper()
+
+        # This should work
+        data = '[{"update status": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update status,failure']), data, OK_CODE)
+
+        data = '[{"update (status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (status),failure']), data, OK_CODE)
+
+        data = '[{"update (((status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (((status),failure']), data, OK_CODE)
+
+        data = '[{"update )status)": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update )status),failure']), data, OK_CODE)
+
+        data = '[{"update (status": "failure"}]'
+        self.check_data(rules.dash_q(['(*).update (status),failure']), data, WARNING_CODE)
