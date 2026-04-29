@@ -22,30 +22,26 @@ chmod +x /usr/local/nagios/libexec/plugins/check_http_json.py
 Add the following service definition to your server config (`localhost.cfg`):
 
 ```
-
 define service {
         use                             local-service
         host_name                       localhost
         service_description             <command_description>
         check_command                   <command_name>
-        }
-
+}
 ```
 
 Add the following command definition to your commands config (`commands.config`):
 
 ```
-
-define command{
+define command {
         command_name    <command_name>
         command_line    /usr/bin/python /usr/local/nagios/libexec/plugins/check_http_json.py -H <host>:<port> -p <path> [-e|-q|-w|-c <rules>] [-m <metrics>]
-        }
-
+}
 ```
 
 ### Icinga
 
-An example Icinga command definition can be found here: (`contrib/icinga2_check_command_definition.conf`)
+An example Icinga command definition can be found here: [contrib](contrib/).
 
 ## Usage
 
@@ -277,15 +273,15 @@ check_http_json.py -H <host>:<port> -p <path> -w "metric,,,,MIN,MAX"
 
 #### Range Definitions
 
-* **Format:** [@]START:END
-* **Generates a Warning or Critical if...**
-    * **Value is less than 0 or greater than 1000:** `1000` or `0:1000`
-    * **Value is greater than or equal to 1000, or less than or equal to 0:** `@1000` or `@0:1000`
-    * **Value is less than 1000:** `1000:`
-    * **Value is greater than 1000:** `~:1000`
-    * **Value is greater than or equal to 1000:** `@1000:`
+* Format: [@]START:END
+* Generates a Warning or Critical if:
+    * Value is less than 0 or greater than 1000: `1000` or `0:1000`
+    * Value is greater than or equal to 1000, or less than or equal to 0: `@1000` or `@0:1000`
+    * Value is less than 1000: `1000:`
+    * Value is greater than 1000: `~:1000`
+    * Value is greater than or equal to 1000: `@1000:`
 
-More info about Nagios Range format and Units of Measure can be found at [https://nagios-plugins.org/doc/guidelines.html](https://nagios-plugins.org/doc/guidelines.html).
+More info about Nagios Range format and Units of Measure can be found at [https://www.monitoring-plugins.org/doc/guidelines.html](https://www.monitoring-plugins.org/doc/guidelines.html).
 
 ### Performance Data Metrics
 
@@ -333,15 +329,15 @@ check_http_json.py -H <host>:<port> -p <path> --key_time_critical "metric,TIME"
 
 #### TIME Definitions
 
-* **Format:** [@][-]TIME
-* **Generates a Warning or Critical if...**
-    * **Timestamp is more than 30 seconds in the past:** `30s`
-    * **Timestamp is more than 5 minutes in the past:** `5m`
-    * **Timestamp is more than 12 hours in the past:** `12h`
-    * **Timestamp is more than 2 days in the past:** `2d`
-    * **Timestamp is more than 30 minutes in the future:** `-30m`
-    * **Timestamp is not more than 30 minutes in the future:** `@-30m`
-    * **Timestamp is not more than 30 minutes in the past:** `@30m`
+* Format: [@][-]TIME
+* Generates a Warning or Critical if:
+    * Timestamp is more than 30 seconds in the past: `30s`
+    * Timestamp is more than 5 minutes in the past: `5m`
+    * Timestamp is more than 12 hours in the past: `12h`
+    * Timestamp is more than 2 days in the past: `2d`
+    * Timestamp is more than 30 minutes in the future: `-30m`
+    * Timestamp is not more than 30 minutes in the future: `@-30m`
+    * Timestamp is not more than 30 minutes in the past: `@30m`
 
 ##### Timestamp Format
 
