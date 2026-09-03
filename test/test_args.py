@@ -36,3 +36,11 @@ class ArgsTest(unittest.TestCase):
     def test_parser_with_value_mapping(self):
         parser = parseArgs(['-H', 'foobar', '-M', 'key=value'])
         self.assertEqual(parser.metric_value_mapping, [('key', 'value')])
+
+    def test_parser_with_no_check_hostname(self):
+        parser = parseArgs(['-H', 'foobar', '--no-check-hostname'])
+        self.assertTrue(parser.no_check_hostname)
+
+    def test_parser_no_check_hostname_default(self):
+        parser = parseArgs(['-H', 'foobar'])
+        self.assertFalse(parser.no_check_hostname)
