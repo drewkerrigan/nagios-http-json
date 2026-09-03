@@ -558,6 +558,8 @@ def parseArgs(args):
                         help='''Map the values of the gathered metric to the given values.
                         This can be used to map non-numeric values to numeric values, e.g. -M Up=1. Can used multiple times.
                         This flag is meant to be used with the -m flag.''')
+    parser.add_argument('--no-check-hostname', dest='no_check_hostname', action='store_true',
+                        help='Disable SSL hostname verification (useful when hostname is not in cert SAN)')
 
     return parser.parse_args(args)
 
@@ -604,14 +606,17 @@ def prepare_context(args):
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
     else:
-        # Disable hostname verification when connecting by IP address.
-        # IP SANs in certificates are rare (RFC 6125), and monitoring
-        # checks commonly connect by IP.
-        try:
-            ipaddress.ip_address(args.host)
+        # Disable hostname verification when connecting by IP address
+        # (IP SANs are rare per RFC 6125, common in monitoring) or when
+        # explicitly requested via --no-check-hostname.
+        if args.no_check_hostname:
             context.check_hostname = False
-        except ValueError:
-            context.check_hostname = True
+        else:
+            try:
+                ipaddress.ip_address(args.host)
+                context.check_hostname = False
+            except ValueError:
+                context.check_hostname = True
         context.verify_mode = ssl.CERT_OPTIONAL
         context.load_default_certs()
         if args.cacert:
