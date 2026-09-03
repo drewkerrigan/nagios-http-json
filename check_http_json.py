@@ -6,6 +6,7 @@ import json
 import argparse
 import sys
 import ssl
+import ipaddress
 import traceback
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -603,6 +604,14 @@ def prepare_context(args):
         context.check_hostname = False
         context.verify_mode = ssl.CERT_NONE
     else:
+        # Disable hostname verification when connecting by IP address.
+        # IP SANs in certificates are rare (RFC 6125), and monitoring
+        # checks commonly connect by IP.
+        try:
+            ipaddress.ip_address(args.host)
+            context.check_hostname = False
+        except ValueError:
+            context.check_hostname = True
         context.verify_mode = ssl.CERT_OPTIONAL
         context.load_default_certs()
         if args.cacert:
