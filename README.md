@@ -63,6 +63,7 @@ usage: check_http_json.py [-h] [-d] [-s] -H HOST [-k] [-V] [--cacert CACERT]
                           [-Y [KEY_VALUE_LIST_NOT_CRITICAL [KEY_VALUE_LIST_NOT_CRITICAL ...]]]
                           [-m [METRIC_LIST [METRIC_LIST ...]]]
                           [-M KEY=VALUE]
+                          [--no-check-hostname]
 
 Check HTTP JSON Nagios Plugin
 
@@ -77,6 +78,7 @@ options:
   -s, --ssl             use TLS to connect to remote host
   -H HOST, --host HOST  Remote host to query
   -k, --insecure        Do not check server SSL certificate
+  --no-check-hostname   Disable SSL hostname verification (useful when hostname is not in cert SAN)
   -X {GET,POST}, --request {GET,POST}
                         Specifies a custom request method to use when communicating with the HTTP server
   -V, --version         Print version of this plugin
